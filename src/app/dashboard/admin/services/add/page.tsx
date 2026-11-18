@@ -56,7 +56,7 @@ function ServiceForm() {
     const fetchService = async () => {
       try {
         const res = await fetch(`${API_URL}/admin/services/${editId}`, {
-          credentials: "include",
+          // credentials: "include",
           cache: "no-store",
         });
 
@@ -183,7 +183,7 @@ function ServiceForm() {
         {
           method: editId ? "PATCH" : "POST",
           headers: { "Content-Type": "application/json" },
-          credentials: "include",
+          // credentials: "include",
           body: JSON.stringify(form),
         },
       );
