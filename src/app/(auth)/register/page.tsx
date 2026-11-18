@@ -33,6 +33,7 @@ export default function RegisterPage() {
   // const [confirmPassword, setConfirmPassword] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [preview, setPreview] = useState("");
+  const [loading, setLoading] = useState(false);
 
   // লোডিং এবং এরর স্টেট
   // const [loading, setLoading] = useState(false);
@@ -129,6 +130,33 @@ export default function RegisterPage() {
     }
   };
 
+  // Google Registration
+  const handleGoogleRegister = async () => {
+    try {
+      setLoading(true);
+
+      await authClient.signIn.social({
+        provider: "google",
+        callbackURL: "/",
+      });
+
+      // toast.add({
+      //   title: "Signing in...",
+      //   description: "Redirecting you to Google authentication.",
+      //   type: "info",
+      // });
+    } catch (err) {
+      console.error("Google login error:", err);
+      setLoading(false);
+
+      // toast.add({
+      //   title: "Login Failed",
+      //   description: "Could not authenticate with Google.",
+      //   type: "error",
+      // });
+    }
+  };
+
   return (
     <main className="min-h-screen bg-[#F8F3EB] px-4 py-10 sm:px-6 lg:py-16">
       <div className="mx-auto grid max-w-6xl overflow-hidden rounded-3xl bg-white shadow-xl lg:grid-cols-2">
@@ -203,7 +231,9 @@ export default function RegisterPage() {
             {/* Google Sign Up */}
             <button
               type="button"
-              className="flex w-full items-center justify-center gap-3 rounded-xl border border-[#E8DCCB] bg-white py-3.5 text-sm font-semibold text-[#352A24] transition hover:bg-[#F8F3EB]"
+              onClick={handleGoogleRegister}
+              disabled={loading}
+              className="flex w-full items-center justify-center gap-3 rounded-xl border border-[#E8DCCB] bg-white py-3.5 text-sm font-semibold text-[#352A24] transition hover:bg-[#F8F3EB] cursor-pointer"
             >
               {/* <Chrome size={19} className="text-[#765B46]" /> */}
               Continue with Google
