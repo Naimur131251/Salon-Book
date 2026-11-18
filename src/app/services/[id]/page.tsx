@@ -185,7 +185,7 @@ function ServiceDetailsContent() {
   const isActive = service.status === "active";
 
   return (
-    <main className="min-h-screen bg-[#FAF7F2] px-4 py-12 md:px-8">
+    <main className="min-h-screen bg-[#FAF7F2] px-4 py-12 md:px-8 mt-10">
       <div className="mx-auto max-w-6xl">
         {/* Back Button */}
         <Link

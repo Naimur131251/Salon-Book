@@ -3,7 +3,7 @@ import { ArrowRight, Sparkles } from "lucide-react";
 
 export default function Hero() {
   return (
-    <section className="relative flex min-h-170 items-center overflow-hidden bg-[#352A24] md:min-h-187.5 mt-20">
+    <section className="relative flex min-h-170 items-center overflow-hidden bg-[#352A24] md:min-h-187.5 mt-21">
         
       {/* Background Image */}
       <div
