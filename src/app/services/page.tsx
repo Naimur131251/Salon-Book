@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { Search, Clock, ArrowUpDown, Scissors, Loader2 } from "lucide-react";
 import Image from "next/image";
+import { useRouter, useSearchParams } from "next/navigation";
 
 interface IService {
   _id: string;
@@ -29,13 +30,25 @@ const categories = [
 const API_URL =
   process.env.NEXT_PUBLIC_SERVER_BASE_URL || "http://localhost:5000";
 
-export default function ServicesPage() {
+export function ServicesContent() {
   const [services, setServices] = useState<IService[]>([]);
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("all");
   const [sort, setSort] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const category = searchParams.get("category") || "all";
+
+  const handleCategoryChange = (newCategory: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (newCategory === "all") params.delete("category");
+    else params.set("category", newCategory);
+    router.push(
+      params.toString() ? `/services?${params.toString()}` : "/services",
+      { scroll: false },
+    );
+  };
 
   useEffect(() => {
     const controller = new AbortController();
@@ -130,7 +143,7 @@ export default function ServicesPage() {
           {/* Category */}
           <select
             value={category}
-            onChange={(e) => setCategory(e.target.value)}
+            onChange={(e) => handleCategoryChange(e.target.value)}
             className="w-full rounded-xl border border-[#E8DDD1] bg-[#FAF7F2] px-4 py-3 text-sm text-[#38291F] outline-none focus:border-[#A47754]"
           >
             {categories.map((item) => (
@@ -262,5 +275,19 @@ export default function ServicesPage() {
         )}
       </div>
     </main>
+  );
+}
+
+export default function ServicesPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center">
+          <Loader2 className="animate-spin text-[#A47754]" size={35} />
+        </div>
+      }
+    >
+      <ServicesContent />
+    </Suspense>
   );
 }
