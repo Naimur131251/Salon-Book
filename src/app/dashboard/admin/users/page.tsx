@@ -170,18 +170,18 @@ export default function ManageUsersPage() {
             <table className="w-full min-w-187.5 text-left">
               <thead className="bg-[#FAF7F2] text-xs uppercase text-[#806F62]">
                 <tr>
-                  <th className="px-5 py-4">Customer</th>
+                  <th className="px-9 py-4">Customer</th>
                   <th className="px-5 py-4">Phone</th>
-                  <th className="px-5 py-4">Status</th>
+                  <th className="px-6 py-4">Status</th>
                   <th className="px-5 py-4">Joined</th>
-                  <th className="px-5 py-4">Actions</th>
+                  <th className="px-6 py-4">Actions</th>
                 </tr>
               </thead>
 
               <tbody className="divide-y divide-[#E9DED2]">
                 {filteredUsers.map((user) => (
                   <tr key={user._id}>
-                    <td className="px-5 py-4">
+                    <td className="px-9 py-4">
                       <div className="flex items-center gap-3">
                         <Image
                           src={user.image || "/avatar.png"}
@@ -234,18 +234,20 @@ export default function ManageUsersPage() {
                         <button
                           disabled={updating === user._id}
                           onClick={() => handleBlock(user)}
-                          className={`rounded-lg p-2 disabled:opacity-50 ${
+                          className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all disabled:cursor-not-allowed disabled:opacity-50 ${
                             user.isBlocked
-                              ? "bg-green-50 text-green-700"
-                              : "bg-red-50 text-red-600"
+                              ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white"
+                              : "border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white"
                           }`}
-                          title={user.isBlocked ? "Unblock" : "Block"}
                         >
-                          {user.isBlocked ? (
-                            <CheckCircle size={17} />
+                          {updating === user._id ? (
+                            <Loader2 size={14} className="animate-spin" />
+                          ) : user.isBlocked ? (
+                            <CheckCircle size={14} />
                           ) : (
-                            <Ban size={17} />
+                            <Ban size={14} />
                           )}
+                          <span>{user.isBlocked ? "Unblock" : "Block"}</span>
                         </button>
                       </div>
                     </td>
