@@ -1,8 +1,9 @@
-
 "use client";
 
 import Link from "next/link";
 import { useRef, useState } from "react";
+import { useRouter } from "next/navigation"; // রিডাইরেক্ট করার জন্য
+import { authClient } from "@/lib/auth-client"; // আপনার authClient ফাইলের সঠিক পাথ দিন
 import {
   Scissors,
   User,
@@ -16,24 +17,33 @@ import {
   ImagePlus,
   X,
   Check,
-//   Chrome,
 } from "lucide-react";
 import Image from "next/image";
 
 export default function RegisterPage() {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [imageType, setImageType] = useState<"upload" | "url">("upload");
+
+  // ফর্মের ইনপুট স্টেটগুলো
+  // const [name, setName] = useState("");
+  // const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  // const [confirmPassword, setConfirmPassword] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [preview, setPreview] = useState("");
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [password, setPassword] = useState("");
+  // লোডিং এবং এরর স্টেট
+  // const [loading, setLoading] = useState(false);
+  // const [errorMessage, setErrorMessage] = useState("");
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const passwordRules = [
     {
-      label: "At least 6 characters",
-      valid: password.length >= 6,
+      label: "At least 8 characters", // Better Auth ডিফল্টভাবে ৮ অক্ষর চায়
+      valid: password.length >= 8,
     },
     {
       label: "One uppercase letter",
@@ -59,6 +69,7 @@ export default function RegisterPage() {
     }
 
     setPreview(URL.createObjectURL(file));
+    // নোট: লোকাল ফাইল আপলোড করলে সেটি Cloudinary বা S3-তে আপলোড করে URL নিতে হবে
   };
 
   const handleImageUrl = (url: string) => {
@@ -66,10 +77,61 @@ export default function RegisterPage() {
     setPreview(url);
   };
 
+  // ফর্ম সাবমিট ফাংশন
+  const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    // ফর্ম থেকে সরাসরি সব ডেটা নেওয়া
+    const formData = new FormData(e.currentTarget);
+    const name = formData.get("name") as string;
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
+    const confirmPassword = formData.get("confirmPassword") as string; // আপনার Confirm Password ইনপুটে name="confirmPassword" থাকলে এটি কাজ করবে
+
+    // কনসোলে চেক করার জন্য ফর্মের ডেটা প্রিন্ট করা
+    console.log("Form Submitted Data:", {
+      name,
+      email,
+      password,
+      image: imageType === "url" ? imageUrl : "Local file selected",
+    });
+
+    // পাসওয়ার্ড ম্যাচিং চেক (যদি confirmPassword ফিল্ড থাকে)
+    if (confirmPassword && password !== confirmPassword) {
+      console.error("Error: Passwords do not match!");
+      alert("Passwords do not match!");
+      return;
+    }
+
+    try {
+      const { data, error } = await authClient.signUp.email({
+        email,
+        password,
+        name,
+        image: imageType === "url" && imageUrl ? imageUrl : undefined,
+        callbackURL: "/dashboard",
+      });
+
+      // কনসোলে রেসপন্স চেক করা
+      console.log("Better Auth Response Data:", data);
+      console.log("Better Auth Response Error:", error);
+
+      if (error) {
+        alert(error.message || "Sign up failed!");
+        return;
+      }
+
+      alert("Account created successfully!");
+      router.push("/");
+      // প্রয়োজনে এখানে router.push("/dashboard") দিতে পারেন
+    } catch (err) {
+      console.error("Unexpected Error:", err);
+    }
+  };
+
   return (
     <main className="min-h-screen bg-[#F8F3EB] px-4 py-10 sm:px-6 lg:py-16">
       <div className="mx-auto grid max-w-6xl overflow-hidden rounded-3xl bg-white shadow-xl lg:grid-cols-2">
-
         {/* Left Side */}
         <div className="relative hidden min-h-full lg:block">
           <div
@@ -106,8 +168,8 @@ export default function RegisterPage() {
             </h1>
 
             <p className="mt-5 max-w-md text-sm leading-7 text-[#E8DCCB]">
-              Join SalonBook and discover your favorite salon services.
-              Your perfect beauty experience is just one step away.
+              Join SalonBook and discover your favorite salon services. Your
+              perfect beauty experience is just one step away.
             </p>
           </div>
         </div>
@@ -115,7 +177,6 @@ export default function RegisterPage() {
         {/* Right Side */}
         <div className="flex items-center justify-center px-5 py-10 sm:px-10 lg:px-12 xl:px-16">
           <div className="w-full max-w-md">
-
             {/* Mobile Logo */}
             <Link
               href="/"
@@ -135,8 +196,7 @@ export default function RegisterPage() {
               </h2>
 
               <p className="mt-3 text-sm leading-6 text-[#8B796A]">
-                Create your account and enjoy a personalized beauty
-                experience.
+                Create your account and enjoy a personalized beauty experience.
               </p>
             </div>
 
@@ -158,16 +218,21 @@ export default function RegisterPage() {
             </div>
 
             {/* Registration Form */}
-            <form className="space-y-5">
-
+            <form className="space-y-5" onSubmit={handleSignUp}>
               {/* Full Name */}
               <div>
-                <label htmlFor="name" className="mb-2 block text-sm font-semibold text-[#352A24]">
+                <label
+                  htmlFor="name"
+                  className="mb-2 block text-sm font-semibold text-[#352A24]"
+                >
                   Full Name
                 </label>
 
                 <div className="relative">
-                  <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#B89B7A]" />
+                  <User
+                    size={18}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-[#B89B7A]"
+                  />
                   <input
                     id="name"
                     name="name"
@@ -182,12 +247,18 @@ export default function RegisterPage() {
 
               {/* Email */}
               <div>
-                <label htmlFor="email" className="mb-2 block text-sm font-semibold text-[#352A24]">
+                <label
+                  htmlFor="email"
+                  className="mb-2 block text-sm font-semibold text-[#352A24]"
+                >
                   Email Address
                 </label>
 
                 <div className="relative">
-                  <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#B89B7A]" />
+                  <Mail
+                    size={18}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-[#B89B7A]"
+                  />
                   <input
                     id="email"
                     name="email"
@@ -210,7 +281,6 @@ export default function RegisterPage() {
                 </label>
 
                 <div className="rounded-xl border border-[#E8DCCB] bg-[#FDFBF8] p-4">
-
                   <div className="mb-4 flex gap-2">
                     <button
                       type="button"
@@ -317,12 +387,18 @@ export default function RegisterPage() {
 
               {/* Password */}
               <div>
-                <label htmlFor="password" className="mb-2 block text-sm font-semibold text-[#352A24]">
+                <label
+                  htmlFor="password"
+                  className="mb-2 block text-sm font-semibold text-[#352A24]"
+                >
                   Password
                 </label>
 
                 <div className="relative">
-                  <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#B89B7A]" />
+                  <Lock
+                    size={18}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-[#B89B7A]"
+                  />
 
                   <input
                     id="password"
@@ -339,7 +415,9 @@ export default function RegisterPage() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    aria-label={
+                      showPassword ? "Hide password" : "Show password"
+                    }
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-[#B89B7A]"
                   >
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -355,7 +433,9 @@ export default function RegisterPage() {
                       ) : (
                         <span className="h-3.5 w-3.5 rounded-full border border-[#C9B9A8]" />
                       )}
-                      <span className={`text-xs ${rule.valid ? "text-green-700" : "text-[#9A8A7B]"}`}>
+                      <span
+                        className={`text-xs ${rule.valid ? "text-green-700" : "text-[#9A8A7B]"}`}
+                      >
                         {rule.label}
                       </span>
                     </div>
@@ -365,12 +445,18 @@ export default function RegisterPage() {
 
               {/* Confirm Password */}
               <div>
-                <label htmlFor="confirmPassword" className="mb-2 block text-sm font-semibold text-[#352A24]">
+                <label
+                  htmlFor="confirmPassword"
+                  className="mb-2 block text-sm font-semibold text-[#352A24]"
+                >
                   Confirm Password
                 </label>
 
                 <div className="relative">
-                  <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#B89B7A]" />
+                  <Lock
+                    size={18}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-[#B89B7A]"
+                  />
 
                   <input
                     id="confirmPassword"
@@ -385,10 +471,16 @@ export default function RegisterPage() {
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                    aria-label={
+                      showConfirmPassword ? "Hide password" : "Show password"
+                    }
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-[#B89B7A]"
                   >
-                    {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    {showConfirmPassword ? (
+                      <EyeOff size={18} />
+                    ) : (
+                      <Eye size={18} />
+                    )}
                   </button>
                 </div>
               </div>
@@ -402,15 +494,25 @@ export default function RegisterPage() {
                   className="mt-1 h-4 w-4 accent-[#765B46]"
                 />
 
-                <label htmlFor="terms" className="text-xs leading-5 text-[#8B796A]">
+                <label
+                  htmlFor="terms"
+                  className="text-xs leading-5 text-[#8B796A]"
+                >
                   I agree to the{" "}
-                  <Link href="/terms" className="font-semibold text-[#765B46] underline">
+                  <Link
+                    href="/terms"
+                    className="font-semibold text-[#765B46] underline"
+                  >
                     Terms & Conditions
                   </Link>{" "}
                   and{" "}
-                  <Link href="/privacy" className="font-semibold text-[#765B46] underline">
+                  <Link
+                    href="/privacy"
+                    className="font-semibold text-[#765B46] underline"
+                  >
                     Privacy Policy
-                  </Link>.
+                  </Link>
+                  .
                 </label>
               </div>
 
@@ -420,7 +522,10 @@ export default function RegisterPage() {
                 className="group flex w-full items-center justify-center gap-2 rounded-xl bg-[#352A24] py-4 text-sm font-semibold text-white transition hover:bg-[#765B46]"
               >
                 Create Account
-                <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />
+                <ArrowRight
+                  size={18}
+                  className="transition-transform group-hover:translate-x-1"
+                />
               </button>
 
               {/* Security Note */}
@@ -440,7 +545,6 @@ export default function RegisterPage() {
                 Sign In
               </Link>
             </p>
-
           </div>
         </div>
       </div>
