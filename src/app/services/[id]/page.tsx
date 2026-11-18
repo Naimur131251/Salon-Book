@@ -52,6 +52,63 @@ function ServiceDetailsContent() {
   const [success, setSuccess] = useState("");
   const [bookingError, setBookingError] = useState("");
 
+  const timeSlots = [
+    "09:00 AM - 10:00 AM",
+    "10:00 AM - 11:00 AM",
+    "11:00 AM - 12:00 PM",
+    "12:00 PM - 01:00 PM",
+    "02:00 PM - 03:00 PM",
+    "03:00 PM - 04:00 PM",
+    "04:00 PM - 05:00 PM",
+    "05:00 PM - 06:00 PM",
+  ];
+
+  const [bookedSlots, setBookedSlots] = useState<{
+    date: string;
+    slots: string[];
+  }>({ date: "", slots: [] });
+
+  useEffect(() => {
+    if (!appointmentDate) {
+      return;
+    }
+
+    const controller = new AbortController();
+
+    const fetchBookedSlots = async () => {
+      try {
+        const res = await fetch(
+          `${API_URL}/appointments/booked-slots?date=${appointmentDate}`,
+          {
+            cache: "no-store",
+            signal: controller.signal,
+          },
+        );
+
+        const result = await res.json();
+
+        if (!res.ok) {
+          throw new Error(result.message || "Failed to fetch booked slots");
+        }
+
+        setBookedSlots({
+          date: appointmentDate,
+          slots: result.data || [],
+        });
+
+        setTimeSlot((prev) => (result.data?.includes(prev) ? "" : prev));
+      } catch (error) {
+        if (error instanceof Error && error.name !== "AbortError") {
+          console.error("Failed to fetch booked slots:", error);
+        }
+      }
+    };
+
+    fetchBookedSlots();
+
+    return () => controller.abort();
+  }, [appointmentDate]);
+
   // Fetch Service Details
   useEffect(() => {
     const controller = new AbortController();
@@ -121,8 +178,9 @@ function ServiceDetailsContent() {
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: "include",
+        // credentials: "include",
         body: JSON.stringify({
+          customerId: user.id,
           serviceId: service._id,
           appointmentDate,
           timeSlot,
@@ -137,6 +195,11 @@ function ServiceDetailsContent() {
       }
 
       setSuccess(result.message);
+      setBookedSlots((prev) =>
+        prev.date === appointmentDate
+          ? { ...prev, slots: [...prev.slots, timeSlot] }
+          : prev,
+      );
       setAppointmentDate("");
       setTimeSlot("");
       setMessage("");
@@ -297,7 +360,9 @@ function ServiceDetailsContent() {
                     <input
                       type="date"
                       required
-                      min={new Date().toLocaleDateString("en-CA")}
+                      min={new Intl.DateTimeFormat("en-CA", {
+                        timeZone: "Asia/Dhaka",
+                      }).format(new Date())}
                       value={appointmentDate}
                       onChange={(e) => setAppointmentDate(e.target.value)}
                       className="w-full rounded-xl border border-[#E8DDD1] bg-[#FAF7F2] px-4 py-3 text-sm text-[#38291F] outline-none focus:border-[#A47754]"
@@ -310,13 +375,30 @@ function ServiceDetailsContent() {
                       Preferred Time
                     </label>
 
-                    <input
-                      type="time"
-                      required
+                    <select
                       value={timeSlot}
                       onChange={(e) => setTimeSlot(e.target.value)}
-                      className="w-full rounded-xl border border-[#E8DDD1] bg-[#FAF7F2] px-4 py-3 text-sm text-[#38291F] outline-none focus:border-[#A47754]"
-                    />
+                      disabled={!appointmentDate}
+                      required
+                      className="w-full rounded-xl border border-[#E9DED2] bg-white px-4 py-3 text-sm text-[#38291F] focus:border-[#80583D] focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-100 disabled:opacity-60"
+                    >
+                      <option value="">
+                        {appointmentDate
+                          ? "Select a time slot"
+                          : "Select a date first"}
+                      </option>
+
+                      {timeSlots.map((slot) => {
+                        const isBooked =
+                          bookedSlots.date === appointmentDate &&
+                          bookedSlots.slots.includes(slot);
+                        return (
+                          <option key={slot} value={slot} disabled={isBooked}>
+                            {slot} {isBooked ? "(Booked)" : ""}
+                          </option>
+                        );
+                      })}
+                    </select>
                   </div>
 
                   <div>

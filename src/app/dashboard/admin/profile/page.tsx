@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useSession } from "@/lib/auth-client";
 import { toast } from "sonner";
-import { UserRound, Mail, Phone, Camera, Loader2, Save } from "lucide-react";
+import { UserRound, Mail, Camera, Loader2, Save } from "lucide-react";
 import Image from "next/image";
 
 const API_URL = process.env.NEXT_PUBLIC_SERVER_BASE_URL;
@@ -14,7 +14,7 @@ export default function AdminProfilePage() {
 
   const [name, setName] = useState(session?.user?.name || "");
   const [email] = useState(session?.user?.email || "");
-  const [phone, setPhone] = useState("");
+  // const [phone, setPhone] = useState("");
   const [image, setImage] = useState(session?.user?.image || "");
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -83,7 +83,7 @@ export default function AdminProfilePage() {
         body: JSON.stringify({
           name: name.trim(),
           image,
-          phone: phone.trim(),
+          // phone: phone.trim(),
         }),
       });
 
@@ -195,7 +195,7 @@ export default function AdminProfilePage() {
             </div>
           </div>
 
-          <div>
+          {/* <div>
             <label className="mb-2 block text-sm font-semibold text-[#38291F]">
               Phone Number
             </label>
@@ -213,7 +213,7 @@ export default function AdminProfilePage() {
                 className="w-full rounded-xl border border-[#E9DED2] bg-[#FAF7F2] py-3 pl-11 pr-4 outline-none focus:border-[#80583D]"
               />
             </div>
-          </div>
+          </div> */}
 
           <button
             type="submit"
