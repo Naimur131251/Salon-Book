@@ -95,6 +95,8 @@ export default function Navbar() {
                     src={user.image}
                     alt={user.name}
                     className="h-9 w-9 rounded-full object-cover"
+                    width={500}
+                    height={500}
                   />
                 ) : (
                   <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#E8DCCB] text-[#352A24]">

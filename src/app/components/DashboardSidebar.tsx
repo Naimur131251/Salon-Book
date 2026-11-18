@@ -13,9 +13,9 @@ import {
   ClipboardList,
   Users,
   CreditCard,
-//   Settings,
-  LogOut,
-//   Sparkles,
+  //   Settings,
+  // LogOut,
+  //   Sparkles,
 } from "lucide-react";
 
 import {
@@ -29,6 +29,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import Image from "next/image";
 
 const adminMenu = [
   {
@@ -177,9 +178,21 @@ export function DashboardSidebar() {
       {/* Footer */}
       <SidebarFooter className="border-t border-[#E9DED2] p-4">
         <div className="flex items-center gap-3 rounded-xl bg-white p-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#EDE0D3] text-[#80583D]">
-            <UserRound size={20} />
-          </div>
+          {user?.image ? (
+            <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full border border-[#E9DED2]">
+              <Image
+                src={user.image}
+                alt={user?.name || "User"}
+                fill
+                sizes="40px"
+                className="object-cover"
+              />
+            </div>
+          ) : (
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#EDE0D3] text-[#80583D]">
+              <UserRound size={20} />
+            </div>
+          )}
 
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold text-[#38291F]">
@@ -191,14 +204,6 @@ export function DashboardSidebar() {
             </p>
           </div>
         </div>
-
-        <Link
-          href="/"
-          className="mt-3 flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium text-[#806F62] transition hover:bg-[#EDE0D3] hover:text-[#38291F]"
-        >
-          <LogOut size={18} />
-          Back to Website
-        </Link>
       </SidebarFooter>
     </Sidebar>
   );
