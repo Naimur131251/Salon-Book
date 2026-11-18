@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { authClient } from "@/lib/auth-client"; // আপনার authClient ফাইলের সঠিক পাথ দিন
 import {
   Scissors,
   Mail,
@@ -10,11 +12,53 @@ import {
   EyeOff,
   ArrowRight,
   Sparkles,
-  //   Chrome,
+  // Chrome,
 } from "lucide-react";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLoading(true);
+
+    // ফর্ম থেকে সরাসরি ডেটা সংগ্রহ করা
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
+    const rememberMe = formData.get("rememberMe") === "on"; // চেকবক্স থাকলে তা ধরবে, না থাকলে নিচে true সেট করা আছে
+
+    console.log("Attempting Login with:", { email, rememberMe });
+
+    try {
+      const { data, error } = await authClient.signIn.email({
+        email,
+        password,
+        rememberMe: rememberMe || true,
+        callbackURL: "/", // লগইন সফল হলে যে পেজে যাবে
+      });
+
+      // কনসোলে রেসপন্স চেক করা
+      console.log("Login Response Data:", data);
+      console.log("Login Response Error:", error);
+
+      if (error) {
+        alert(error.message || "Invalid email or password!");
+        setLoading(false);
+        return;
+      }
+
+      console.log("Login Successful!");
+      router.push("/");
+    } catch (err) {
+      console.error("Unexpected Login Error:", err);
+      alert("Something went wrong. Check console.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <main className="min-h-screen bg-[#F8F3EB] px-4 py-10 sm:px-6 lg:py-16">
@@ -105,7 +149,7 @@ export default function LoginPage() {
             </div>
 
             {/* Login Form */}
-            <form className="space-y-5">
+            <form className="space-y-5" onSubmit={handleSignIn}>
               {/* Email */}
               <div>
                 <label
@@ -184,6 +228,7 @@ export default function LoginPage() {
               <div className="flex items-center gap-2">
                 <input
                   id="remember"
+                  name="rememberMe"
                   type="checkbox"
                   className="h-4 w-4 accent-[#765B46]"
                 />
@@ -196,13 +241,20 @@ export default function LoginPage() {
               {/* Submit Button */}
               <button
                 type="submit"
-                className="group flex w-full items-center justify-center gap-2 rounded-xl bg-[#352A24] py-4 text-sm font-semibold text-white transition hover:bg-[#765B46]"
+                disabled={loading}
+                className="group flex w-full items-center justify-center gap-2 rounded-xl bg-[#352A24] py-4 text-sm font-semibold text-white transition hover:bg-[#765B46] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Sign In
-                <ArrowRight
-                  size={18}
-                  className="transition-transform group-hover:translate-x-1"
-                />
+                {loading ? (
+                  "Signing In..."
+                ) : (
+                  <>
+                    Sign In
+                    <ArrowRight
+                      size={18}
+                      className="transition-transform group-hover:translate-x-1"
+                    />
+                  </>
+                )}
               </button>
             </form>
 
