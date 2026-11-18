@@ -28,8 +28,11 @@ export default function Navbar() {
   const user = session?.user;
   const role = (user as (typeof user & { role?: string }) | undefined)?.role;
 
-  // Role-based Dashboard
-  const dashboardLink = role === "admin" ? "/admin/dashboard" : "/dashboard";
+  // Role-based Dashboard (Default: customer)
+  const dashboardLink =
+    role?.toLowerCase() === "admin"
+      ? "/dashboard/admin"
+      : "/dashboard/customer";
 
   // Logout
   const handleLogout = async () => {
