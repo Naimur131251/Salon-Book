@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CalendarDays, Scissors, ArrowRight } from "lucide-react";
+export const instant = false;
 
 export default function CustomerDashboard() {
   return (

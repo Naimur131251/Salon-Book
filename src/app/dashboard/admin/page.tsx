@@ -1,34 +1,119 @@
-import { CalendarDays, Scissors, Users, CreditCard } from "lucide-react";
+"use client";
 
-const stats = [
+import { useEffect, useState } from "react";
+import {
+  Users,
+  Scissors,
+  CalendarDays,
+  Clock,
+  CheckCircle,
+  CreditCard,
+  Loader2,
+} from "lucide-react";
+
+const API_URL = process.env.NEXT_PUBLIC_SERVER_BASE_URL;
+
+interface DashboardStats {
+  totalCustomers: number;
+  totalActiveServices: number;
+  totalAppointments: number;
+  pendingAppointments: number;
+  confirmedAppointments: number;
+  totalSuccessfulPayments: number;
+}
+
+const statItems = [
   {
-    title: "Total Services",
-    value: "21",
-    icon: Scissors,
-  },
-  {
-    title: "Appointments",
-    value: "120",
-    icon: CalendarDays,
-  },
-  {
-    title: "Total Users",
-    value: "85",
+    key: "totalCustomers",
+    title: "Registered Customers",
     icon: Users,
+    color: "bg-blue-50 text-blue-600",
   },
   {
-    title: "Transactions",
-    value: "৳45,000",
-    icon: CreditCard,
+    key: "totalActiveServices",
+    title: "Active Services",
+    icon: Scissors,
+    color: "bg-purple-50 text-purple-600",
   },
-];
+  {
+    key: "totalAppointments",
+    title: "Appointment Requests",
+    icon: CalendarDays,
+    color: "bg-orange-50 text-orange-600",
+  },
+  {
+    key: "pendingAppointments",
+    title: "Pending Appointments",
+    icon: Clock,
+    color: "bg-amber-50 text-amber-600",
+  },
+  {
+    key: "confirmedAppointments",
+    title: "Confirmed Appointments",
+    icon: CheckCircle,
+    color: "bg-green-50 text-green-600",
+  },
+  {
+    key: "totalSuccessfulPayments",
+    title: "Successful Payments",
+    icon: CreditCard,
+    color: "bg-emerald-50 text-emerald-600",
+  },
+] as const;
 
 export default function AdminDashboard() {
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await fetch(`${API_URL}/admin/overview`, {
+          //   credentials: "include",
+          cache: "no-store",
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.message || "Failed to load statistics");
+        }
+
+        setStats(result.data);
+      } catch (error) {
+        setError(
+          error instanceof Error ? error.message : "Something went wrong",
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader2 className="animate-spin text-[#80583D]" size={35} />
+      </div>
+    );
+  }
+
+  if (error || !stats) {
+    return (
+      <div className="rounded-xl bg-red-50 p-5 text-red-600">
+        {error || "Unable to load dashboard"}
+      </div>
+    );
+  }
+
   return (
     <div>
       <div>
         <p className="text-sm font-medium text-[#A47754]">
-          Welcome Back, Admin
+          SalonBook Administration
         </p>
 
         <h1 className="mt-2 text-3xl font-bold text-[#38291F]">
@@ -36,30 +121,37 @@ export default function AdminDashboard() {
         </h1>
 
         <p className="mt-2 text-sm text-[#806F62]">
-          Manage your salon services, appointments and customers.
+          Monitor your salon&apos;s performance and activities.
         </p>
       </div>
 
-      <div className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-        {stats.map((stat) => {
-          const Icon = stat.icon;
+      <div className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+        {statItems.map((item) => {
+          const Icon = item.icon;
+          const value = stats[item.key];
 
           return (
             <div
-              key={stat.title}
-              className="rounded-2xl border border-[#E9DED2] bg-white p-6 shadow-sm"
+              key={item.key}
+              className="rounded-2xl border border-[#E9DED2] bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
             >
               <div className="flex items-center justify-between">
-                <p className="text-sm text-[#806F62]">{stat.title}</p>
+                <div>
+                  <p className="text-sm font-medium text-[#806F62]">
+                    {item.title}
+                  </p>
 
-                <div className="rounded-xl bg-[#EDE0D3] p-3 text-[#80583D]">
-                  <Icon size={21} />
+                  <h2 className="mt-4 text-3xl font-bold text-[#38291F]">
+                    {item.key === "totalSuccessfulPayments"
+                      ? `৳${value.toLocaleString("en-BD")}`
+                      : value.toLocaleString("en-BD")}
+                  </h2>
+                </div>
+
+                <div className={`rounded-xl p-4 ${item.color}`}>
+                  <Icon size={25} />
                 </div>
               </div>
-
-              <h2 className="mt-5 text-3xl font-bold text-[#38291F]">
-                {stat.value}
-              </h2>
             </div>
           );
         })}
