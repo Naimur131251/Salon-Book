@@ -1,9 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useMemo, Suspense } from "react";
 import { useSession } from "@/lib/auth-client";
 import { toast } from "sonner";
-import { useMemo } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   CalendarDays,
@@ -11,19 +10,17 @@ import {
   CreditCard,
   XCircle,
   Loader2,
+  RefreshCw,
 } from "lucide-react";
 import Image from "next/image";
 import { apiFetch } from "@/lib/api-fetch";
-// import Link from "next/link";
-
-// const API = process.env.NEXT_PUBLIC_SERVER_BASE_URL;
 
 interface Appointment {
   _id: string;
   appointmentDate: string;
   timeSlot: string;
-  status: string;
-  paymentStatus: string;
+  status: "pending" | "confirmed" | "cancelled";
+  paymentStatus: "unpaid" | "paid";
   servicePrice: number;
   service?: {
     serviceName: string;
@@ -32,20 +29,25 @@ interface Appointment {
   };
 }
 
-export default function MyAppointmentsPage() {
+function CustomerAppointmentsContent() {
   const { data: session, isPending } = useSession();
 
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState("");
+  const [sortBy, setSortBy] = useState("newest");
 
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const activeFilter = searchParams.get("status") || "all";
+  const statusFromUrl = searchParams.get("status");
 
-  const [sortBy, setSortBy] = useState("newest");
+  const isValidStatus =
+    statusFromUrl &&
+    ["pending", "confirmed", "cancelled", "paid"].includes(statusFromUrl);
+
+  const activeFilter = isValidStatus ? statusFromUrl : "all";
 
   const handleFilterChange = (value: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -85,11 +87,13 @@ export default function MyAppointmentsPage() {
     }
   }, [customerId]);
 
+  const refreshAppointments = () => {
+    setLoading(true);
+    void fetchAppointments();
+  };
+
   useEffect(() => {
-    if (isPending) return;
-
-    if (!customerId) return;
-
+    if (isPending || !customerId) return;
     void Promise.resolve().then(fetchAppointments);
   }, [customerId, isPending, fetchAppointments]);
 
@@ -113,7 +117,7 @@ export default function MyAppointmentsPage() {
 
       if (!res.ok) throw new Error(result.message);
 
-      toast.success(result.message);
+      toast.success(result.message || "Appointment cancelled");
       await fetchAppointments();
     } catch (error) {
       toast.error(
@@ -136,8 +140,6 @@ export default function MyAppointmentsPage() {
       });
 
       const result = await res.json();
-      console.log(result);
-      
 
       if (!res.ok) {
         throw new Error(result.message || "Payment failed");
@@ -147,11 +149,9 @@ export default function MyAppointmentsPage() {
         throw new Error("Stripe checkout URL not found");
       }
 
-      // Redirect to Stripe Checkout
-      window.location.href = result.url;
+      window.location.assign(result.url);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Payment failed");
-
       setProcessing("");
     }
   };
@@ -159,31 +159,22 @@ export default function MyAppointmentsPage() {
   const filteredAppointments = useMemo(() => {
     let result = [...appointments];
 
-    // Filtering
     if (activeFilter === "paid") {
       result = result.filter((item) => item.paymentStatus === "paid");
     } else if (activeFilter !== "all") {
       result = result.filter((item) => item.status === activeFilter);
     }
 
-    // Sorting
     result.sort((a, b) => {
       const dateA = new Date(a.appointmentDate).getTime();
       const dateB = new Date(b.appointmentDate).getTime();
 
       switch (sortBy) {
         case "oldest":
-          return dateA - dateB;
-
-        case "newest":
-          return dateB - dateA;
-
         case "date-asc":
           return dateA - dateB;
-
+        case "newest":
         case "date-desc":
-          return dateB - dateA;
-
         default:
           return dateB - dateA;
       }
@@ -201,150 +192,211 @@ export default function MyAppointmentsPage() {
   }
 
   if (!session?.user) {
-    return <p className="p-8">Please sign in first.</p>;
+    return <p className="p-8 text-[#38291F]">Please sign in first.</p>;
   }
 
   return (
     <div className="space-y-7">
-      <div>
-        <h1 className="text-3xl font-bold text-[#38291F]">My Appointments</h1>
-        <p className="mt-2 text-[#806F62]">
-          View and manage your salon bookings.
-        </p>
-      </div>
-
-      <div className="flex flex-col gap-4 rounded-2xl border border-[#E9DED2] bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
-        {/* Filter */}
-        <div className="w-full sm:w-56">
-          <label className="mb-2 block text-sm font-semibold text-[#38291F]">
-            Filter Appointments
-          </label>
-
-          <select
-            value={activeFilter}
-            onChange={(e) => handleFilterChange(e.target.value)}
-            className="w-full rounded-lg border border-[#E9DED2] bg-[#FAF7F2] px-4 py-3 text-sm text-[#38291F] outline-none focus:border-[#80583D]"
-          >
-            <option value="all">All Appointments</option>
-            <option value="pending">Pending</option>
-            <option value="confirmed">Confirmed</option>
-            <option value="cancelled">Cancelled</option>
-            <option value="paid">Paid Appointments</option>
-          </select>
+      {/* Header */}
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+        <div>
+          <p className="text-sm font-medium text-[#A47754]">Customer Portal</p>
+          <h1 className="mt-2 text-3xl font-bold text-[#38291F]">
+            My Appointments
+          </h1>
+          <p className="mt-2 text-sm text-[#806F62]">
+            View, manage, and track your salon bookings.
+          </p>
         </div>
 
-        {/* Sorting */}
-        <div className="w-full sm:w-56">
-          <label className="mb-2 block text-sm font-semibold text-[#38291F]">
-            Sort By
-          </label>
+        <button
+          onClick={refreshAppointments}
+          disabled={loading}
+          className="flex items-center justify-center gap-2 rounded-xl border border-[#E9DED2] bg-white px-4 py-3 text-sm font-semibold text-[#80583D] transition hover:bg-[#FAF7F2] disabled:opacity-50"
+        >
+          <RefreshCw size={17} className={loading ? "animate-spin" : ""} />
+          Refresh
+        </button>
+      </div>
 
+      {/* Summary Cards */}
+      <div className="grid gap-4 sm:grid-cols-3">
+        {[
+          { label: "Total", value: appointments.length },
+          {
+            label: "Pending",
+            value: appointments.filter((a) => a.status === "pending").length,
+          },
+          {
+            label: "Confirmed",
+            value: appointments.filter((a) => a.status === "confirmed").length,
+          },
+        ].map((item) => (
+          <div
+            key={item.label}
+            className="rounded-2xl border border-[#E9DED2] bg-white p-5"
+          >
+            <p className="text-sm text-[#806F62]">{item.label} Appointments</p>
+            <h2 className="mt-2 text-2xl font-bold text-[#38291F]">
+              {item.value}
+            </h2>
+          </div>
+        ))}
+      </div>
+
+      {/* Filter and Sorting */}
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+        <div className="flex flex-wrap gap-2">
+          {["all", "pending", "confirmed", "cancelled", "paid"].map(
+            (status) => (
+              <button
+                key={status}
+                onClick={() => handleFilterChange(status)}
+                className={`rounded-full px-4 py-2 text-sm font-semibold capitalize transition ${
+                  activeFilter === status
+                    ? "bg-[#80583D] text-white"
+                    : "border border-[#E9DED2] bg-white text-[#806F62] hover:bg-[#FAF7F2]"
+                }`}
+              >
+                {status}
+              </button>
+            ),
+          )}
+        </div>
+
+        <div className="w-full sm:w-60">
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-            className="w-full rounded-lg border border-[#E9DED2] bg-[#FAF7F2] px-4 py-3 text-sm text-[#38291F] outline-none focus:border-[#80583D]"
+            className="w-full rounded-xl border border-[#E9DED2] bg-white px-4 py-2.5 text-sm font-medium text-[#38291F] outline-none focus:border-[#80583D]"
           >
-            <option value="newest">Newest First</option>
-            <option value="oldest">Oldest First</option>
+            <option value="newest">Sort: Newest First</option>
+            <option value="oldest">Sort: Oldest First</option>
             <option value="date-asc">Appointment Date: Earliest</option>
             <option value="date-desc">Appointment Date: Latest</option>
           </select>
         </div>
       </div>
 
-      <div className="grid gap-5">
-        {filteredAppointments.length ? (
+      {/* Appointment Service Cards */}
+      <div className="w-full space-y-4">
+        {filteredAppointments.length > 0 ? (
           filteredAppointments.map((item) => (
             <div
               key={item._id}
-              className="rounded-2xl border border-[#E9DED2] bg-white p-5 shadow-sm sm:p-6"
+              className="grid w-full min-w-0 grid-cols-[76px_minmax(0,1fr)] gap-3 rounded-2xl border border-[#eadfd5] bg-white p-3 shadow-sm transition hover:shadow-md sm:grid-cols-[112px_minmax(0,1fr)] sm:gap-5 sm:p-5"
             >
-              <div className="flex flex-col gap-5 sm:flex-row">
-                {item.service?.image && (
-                  <Image
-                    src={item.service.image}
-                    alt={item.service.serviceName}
-                    className="h-36 w-full rounded-xl object-cover sm:w-40"
-                    width={500}
-                    height={500}
-                  />
-                )}
+              {/* Service Image */}
+              <div className="relative h-20 w-19 overflow-hidden rounded-xl sm:h-28 sm:w-28">
+                <Image
+                  src={item.service?.image || "/placeholder.png"}
+                  alt={item.service?.serviceName || "Service"}
+                  fill
+                  sizes="(max-width: 640px) 76px, 112px"
+                  className="object-cover"
+                />
+              </div>
 
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap justify-between gap-3">
-                    <div>
-                      <h2 className="text-xl font-bold text-[#38291F]">
-                        {item.service?.serviceName || "Salon Service"}
-                      </h2>
-                      <p className="mt-1 text-sm text-[#806F62]">
-                        {item.service?.category}
-                      </p>
-                    </div>
-
-                    <span className="h-fit rounded-full bg-[#F5EBDD] px-3 py-1 text-xs font-semibold capitalize text-[#80583D]">
-                      {item.status}
-                    </span>
+              {/* Service Information */}
+              <div className="min-w-0">
+                {/* Title and Status */}
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <h3 className="wrap-break-words text-sm font-bold text-[#352A24] sm:text-base">
+                      {item.service?.serviceName || "Service"}
+                    </h3>
+                    <p className="mt-1 text-xs text-[#927D70] sm:text-sm">
+                      {item.service?.category || "General"}
+                    </p>
                   </div>
 
-                  <div className="mt-4 flex flex-wrap gap-4 text-sm text-[#806F62]">
-                    <span className="flex items-center gap-2">
-                      <CalendarDays size={16} />
-                      {item.appointmentDate}
-                    </span>
+                  {/* Only One Appointment Status */}
+                  <span
+                    className={`shrink-0 rounded-full px-3 py-1 text-[10px] font-semibold capitalize sm:text-xs ${
+                      item.status === "confirmed"
+                        ? "bg-[#f5eadc] text-[#8B5E3C]"
+                        : item.status === "cancelled"
+                          ? "bg-red-50 text-red-600"
+                          : "bg-yellow-50 text-yellow-700"
+                    }`}
+                  >
+                    {item.status}
+                  </span>
+                </div>
 
-                    <span className="flex items-center gap-2">
-                      <Clock size={16} />
-                      {item.timeSlot}
-                    </span>
+                {/* Date and Time */}
+                <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-[11px] text-[#927D70] sm:text-xs">
+                  <span className="flex items-center gap-1.5">
+                    <CalendarDays size={13} />
+                    {new Date(item.appointmentDate).toLocaleDateString()}
+                  </span>
+
+                  <span className="flex items-center gap-1.5">
+                    <Clock size={13} />
+                    {item.timeSlot}
+                  </span>
+                </div>
+
+                {/* Price and Payment */}
+                <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-bold text-[#352A24]">
+                      ৳{item.servicePrice}
+                    </p>
+
+                    <p className="mt-1 text-[11px] text-[#927D70]">
+                      Payment:{" "}
+                      <span
+                        className={
+                          item.paymentStatus === "paid"
+                            ? "font-semibold text-green-600"
+                            : "text-[#927D70]"
+                        }
+                      >
+                        {item.paymentStatus === "paid" ? "Paid" : "Unpaid"}
+                      </span>
+                    </p>
                   </div>
 
-                  <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <p className="text-lg font-bold text-[#38291F]">
-                        ৳{item.servicePrice}
-                      </p>
-                      <p className="text-xs capitalize text-[#806F62]">
-                        Payment: {item.paymentStatus}
-                      </p>
-                    </div>
+                  {/* Payment and Cancel Buttons */}
+                  <div className="flex flex-wrap gap-2">
+                    {item.status !== "cancelled" &&
+                      (item.paymentStatus === "paid" ? (
+                        <span className="rounded-lg bg-green-50 px-4 py-2 text-xs font-semibold text-green-600">
+                          Paid
+                        </span>
+                      ) : (
+                        <button
+                          disabled={processing === item._id}
+                          onClick={() => handlePayment(item._id)}
+                          className="flex shrink-0 items-center gap-2 rounded-lg bg-[#8B5E3C] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#70482E] disabled:cursor-not-allowed disabled:opacity-50 sm:px-4"
+                        >
+                          {processing === item._id ? (
+                            <Loader2 size={14} className="animate-spin" />
+                          ) : (
+                            <CreditCard size={14} />
+                          )}
+                          {processing === item._id
+                            ? "Processing..."
+                            : "Pay Now"}
+                        </button>
+                      ))}
 
-                    <div className="flex flex-wrap gap-2">
-                      {item.status === "pending" && (
+                    {item.paymentStatus === "unpaid" &&
+                      ["pending", "confirmed"].includes(item.status) && (
                         <button
                           disabled={processing === item._id}
                           onClick={() => handleCancel(item._id)}
-                          className="flex items-center gap-2 rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
+                          className="flex shrink-0 items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-100 disabled:opacity-50"
                         >
-                          <XCircle size={16} />
+                          {processing === item._id ? (
+                            <Loader2 size={14} className="animate-spin" />
+                          ) : (
+                            <XCircle size={14} />
+                          )}
                           Cancel
                         </button>
                       )}
-
-                      {item.status === "confirmed" &&
-                        item.paymentStatus === "unpaid" && (
-                          <button
-                            disabled={processing === item._id}
-                            onClick={() => handlePayment(item._id)}
-                            className="flex items-center gap-2 rounded-lg bg-[#80583D] px-4 py-2 text-sm font-semibold text-white hover:bg-[#62432E] disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            {processing === item._id ? (
-                              <Loader2 size={16} className="animate-spin" />
-                            ) : (
-                              <CreditCard size={16} />
-                            )}
-
-                            {processing === item._id
-                              ? "Processing..."
-                              : "Pay Now"}
-                          </button>
-                        )}
-
-                      {item.paymentStatus === "paid" && (
-                        <span className="rounded-lg bg-green-50 px-4 py-2 text-sm font-semibold text-green-700">
-                          Paid
-                        </span>
-                      )}
-                    </div>
                   </div>
                 </div>
               </div>
@@ -378,5 +430,19 @@ export default function MyAppointmentsPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function MyAppointmentsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-80 items-center justify-center">
+          <Loader2 className="animate-spin text-[#80583D]" size={32} />
+        </div>
+      }
+    >
+      <CustomerAppointmentsContent />
+    </Suspense>
   );
 }

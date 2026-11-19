@@ -2,8 +2,6 @@ import Link from "next/link";
 import { CheckCircle2 } from "lucide-react";
 
 export default function PaymentSuccessPage() {
-    console.log("hhhhhhhhhhhhhhhhhhhhhhhh");
-    
   return (
     <main className="min-h-[70vh] flex items-center justify-center px-4">
       <div className="max-w-md w-full text-center space-y-5">
@@ -17,7 +15,7 @@ export default function PaymentSuccessPage() {
         </p>
 
         <Link
-          href="/dashboard/appointments"
+          href="/dashboard/customer/appointments"
           className="inline-flex px-6 py-3 rounded-lg bg-primary text-primary-foreground"
         >
           View My Appointments
