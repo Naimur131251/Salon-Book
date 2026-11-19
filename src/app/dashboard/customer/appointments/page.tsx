@@ -13,8 +13,9 @@ import {
   Loader2,
 } from "lucide-react";
 import Image from "next/image";
+import { apiFetch } from "@/lib/api-fetch";
 
-const API = process.env.NEXT_PUBLIC_SERVER_BASE_URL;
+// const API = process.env.NEXT_PUBLIC_SERVER_BASE_URL;
 
 interface Appointment {
   _id: string;
@@ -64,8 +65,7 @@ export default function MyAppointmentsPage() {
     if (!customerId) return;
 
     try {
-      const res = await fetch(
-        `${API}/customer/appointments?customerId=${encodeURIComponent(customerId)}`,
+      const res = await apiFetch(`/customer/appointments?customerId=${encodeURIComponent(customerId)}`,
         { cache: "no-store" },
       );
 
@@ -101,7 +101,7 @@ export default function MyAppointmentsPage() {
     try {
       setProcessing(id);
 
-      const res = await fetch(`${API}/customer/appointments/${id}/cancel`, {
+      const res = await apiFetch(`/customer/appointments/${id}/cancel`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ customerId }),
@@ -127,7 +127,7 @@ export default function MyAppointmentsPage() {
       setProcessing(id);
 
       // This endpoint will create a Stripe Checkout Session.
-      const res = await fetch(`${API}/payments/create-checkout-session`, {
+      const res = await apiFetch("/payments/create-checkout-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ appointmentId: id }),

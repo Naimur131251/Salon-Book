@@ -12,8 +12,10 @@ import {
   ArrowRight,
   Loader2,
 } from "lucide-react";
+// import { getToken } from "@/lib/get-token";
+import { apiFetch } from "@/lib/api-fetch";
 
-const API = process.env.NEXT_PUBLIC_SERVER_BASE_URL;
+// const API = process.env.NEXT_PUBLIC_SERVER_BASE_URL;
 
 interface RecentAppointment {
   _id: string;
@@ -72,26 +74,33 @@ export default function CustomerDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const customerId = session?.user?.id;
+    if (isPending) return;
 
-    if (!customerId) {
+    if (!session?.user) {
       return;
     }
 
     const fetchOverview = async () => {
       try {
-        const res = await fetch(
-          `${API}/customer/overview?customerId=${encodeURIComponent(customerId)}`,
-          { cache: "no-store" },
-        );
+        const res = await apiFetch("/customer/overview", {
+          cache: "no-store",
+        });
 
         const result = await res.json();
 
-        if (!res.ok) throw new Error(result.message);
+        if (!res.ok) {
+          throw new Error(result.message);
+        }
+
+        setOverview(result.data);
+
+        if (!res.ok) {
+          throw new Error(result.message);
+        }
 
         setOverview(result.data);
       } catch (error) {
-        console.error(error);
+        console.error("Customer overview error:", error);
       } finally {
         setLoading(false);
       }
@@ -100,7 +109,7 @@ export default function CustomerDashboard() {
     fetchOverview();
   }, [session, isPending]);
 
-  if (isPending || loading) {
+  if (isPending || (loading && session?.user)) {
     return (
       <div className="flex min-h-80 items-center justify-center">
         <Loader2 className="animate-spin text-[#80583D]" size={32} />

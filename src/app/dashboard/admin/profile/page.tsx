@@ -5,8 +5,9 @@ import { useSession } from "@/lib/auth-client";
 import { toast } from "sonner";
 import { UserRound, Mail, Camera, Loader2, Save } from "lucide-react";
 import Image from "next/image";
+import { apiFetch } from "@/lib/api-fetch";
 
-const API_URL = process.env.NEXT_PUBLIC_SERVER_BASE_URL;
+// const API_URL = process.env.NEXT_PUBLIC_SERVER_BASE_URL;
 const IMGBB_KEY = process.env.NEXT_PUBLIC_IMGBB_API_KEY;
 
 export default function AdminProfilePage() {
@@ -76,10 +77,11 @@ export default function AdminProfilePage() {
     try {
       setSaving(true);
 
-      const res = await fetch(`${API_URL}/profile`, {
+      const res = await apiFetch("/profile", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        // credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           name: name.trim(),
           image,

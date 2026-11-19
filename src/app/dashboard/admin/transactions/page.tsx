@@ -10,8 +10,9 @@ import {
   CheckCircle,
   XCircle,
 } from "lucide-react";
+import { apiFetch } from "@/lib/api-fetch";
 
-const API_URL = process.env.NEXT_PUBLIC_SERVER_BASE_URL;
+// const API_URL = process.env.NEXT_PUBLIC_SERVER_BASE_URL;
 
 interface ITransaction {
   _id: string;
@@ -41,7 +42,7 @@ export default function TransactionsPage() {
     try {
       setLoading(true);
 
-      const res = await fetch(`${API_URL}/admin/transactions`, {
+      const res = await apiFetch("/admin/transactions", {
         // credentials: "include",
         cache: "no-store",
       });

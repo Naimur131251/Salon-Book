@@ -6,8 +6,9 @@ import { toast } from "sonner";
 import { ArrowLeft, ImagePlus, Loader2, Upload, X } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { apiFetch } from "@/lib/api-fetch";
 
-const API_URL = process.env.NEXT_PUBLIC_SERVER_BASE_URL;
+// const API_URL = process.env.NEXT_PUBLIC_SERVER_BASE_URL;
 const IMGBB_KEY = process.env.NEXT_PUBLIC_IMGBB_API_KEY;
 
 const categories = [
@@ -55,7 +56,7 @@ function ServiceForm() {
 
     const fetchService = async () => {
       try {
-        const res = await fetch(`${API_URL}/admin/services/${editId}`, {
+        const res = await apiFetch(`/admin/services/${editId}`, {
           // credentials: "include",
           cache: "no-store",
         });
@@ -176,10 +177,10 @@ function ServiceForm() {
     setLoading(true);
 
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         editId
-          ? `${API_URL}/admin/services/${editId}`
-          : `${API_URL}/admin/services`,
+          ? `/admin/services/${editId}`
+          : "/admin/services",
         {
           method: editId ? "PATCH" : "POST",
           headers: { "Content-Type": "application/json" },

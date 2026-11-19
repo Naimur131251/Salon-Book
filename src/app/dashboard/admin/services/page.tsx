@@ -12,6 +12,7 @@ import {
   Search,
 } from "lucide-react";
 import Image from "next/image";
+import { apiFetch } from "@/lib/api-fetch";
 
 interface IService {
   _id: string;
@@ -24,7 +25,7 @@ interface IService {
   status: "active" | "inactive";
 }
 
-const API_URL = process.env.NEXT_PUBLIC_SERVER_BASE_URL;
+// const API_URL = process.env.NEXT_PUBLIC_SERVER_BASE_URL;
 
 export default function ManageServicesPage() {
   const [services, setServices] = useState<IService[]>([]);
@@ -41,7 +42,7 @@ export default function ManageServicesPage() {
     try {
       if (showLoading) setLoading(true);
 
-      const response = await fetch(`${API_URL}/admin/services`, {
+      const response = await apiFetch("/admin/services", {
         cache: "no-store",
       });
 
@@ -115,8 +116,7 @@ export default function ManageServicesPage() {
 
       const newStatus = service.status === "active" ? "inactive" : "active";
 
-      const response = await fetch(
-        `${API_URL}/admin/services/${service._id}/status`,
+      const response = await apiFetch(`admin/services/${service._id}/status`,
         {
           method: "PATCH",
           headers: {
@@ -156,7 +156,7 @@ export default function ManageServicesPage() {
       setError("");
       setMessage("");
 
-      const response = await fetch(`${API_URL}/admin/services/${id}`, {
+      const response = await apiFetch(`admin/services/${id}`, {
         method: "DELETE",
         // credentials: "include",
       });

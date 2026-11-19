@@ -4,8 +4,9 @@ import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation"; // ১. useSearchParams ইম্পোর্ট করা হয়েছে
 import { toast } from "sonner";
 import { Eye, Check, X, Loader2, RefreshCw } from "lucide-react";
+import { apiFetch } from "@/lib/api-fetch";
 
-const API_URL = process.env.NEXT_PUBLIC_SERVER_BASE_URL;
+// const API_URL = process.env.NEXT_PUBLIC_SERVER_BASE_URL;
 
 interface IAppointment {
   _id: string;
@@ -54,8 +55,7 @@ function AppointmentsContent() {
 
   const fetchAppointments = async () => {
     try {
-      const res = await fetch(`${API_URL}/admin/appointments`, {
-        // credentials: "include",
+      const res = await apiFetch("/admin/appointments", {
         cache: "no-store",
       });
 
@@ -108,12 +108,13 @@ function AppointmentsContent() {
     try {
       setUpdating(appointment._id);
 
-      const res = await fetch(
-        `${API_URL}/admin/appointments/${appointment._id}/status`,
+      const res = await apiFetch(
+        `/admin/appointments/${appointment._id}/status`,
         {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          // credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
           body: JSON.stringify({ status }),
         },
       );

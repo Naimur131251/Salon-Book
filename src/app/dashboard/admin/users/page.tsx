@@ -20,10 +20,12 @@ import {
   Loader2,
   RefreshCw,
   X,
+  User,
 } from "lucide-react";
 import Image from "next/image";
+import { apiFetch } from "@/lib/api-fetch";
 
-const API_URL = process.env.NEXT_PUBLIC_SERVER_BASE_URL;
+// const API_URL = process.env.NEXT_PUBLIC_SERVER_BASE_URL;
 
 interface IUser {
   _id: string;
@@ -48,7 +50,7 @@ export default function ManageUsersPage() {
     try {
       setLoading(true);
 
-      const res = await fetch(`${API_URL}/admin/users`, {
+      const res = await apiFetch("/admin/users", {
         // credentials: "include",
         cache: "no-store",
       });
@@ -80,7 +82,7 @@ export default function ManageUsersPage() {
     try {
       setUpdating(user._id);
 
-      const res = await fetch(`${API_URL}/admin/users/${user._id}/status`, {
+      const res = await apiFetch(`/admin/users/${user._id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isBlocked: newStatus }),
@@ -186,13 +188,19 @@ export default function ManageUsersPage() {
                 <div key={user._id} className="space-y-4 p-4">
                   {/* Customer Info */}
                   <div className="flex items-center gap-3">
-                    <Image
-                      src={user.image || "/avatar.png"}
-                      alt={user.name}
-                      width={500}
-                      height={500}
-                      className="h-14 w-14 shrink-0 rounded-full object-cover"
-                    />
+                    {user.image ? (
+                      <Image
+                        src={user.image || "/avatar.png"}
+                        alt={user.name}
+                        className="h-10 w-10 shrink-0 rounded-full object-cover"
+                        width={500}
+                        height={500}
+                      />
+                    ) : (
+                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#E8DCCB] text-[#352A24]">
+                        <User size={20} />
+                      </div>
+                    )}
 
                     <div className="min-w-0 flex-1">
                       <h3 className="truncate font-semibold text-[#38291F]">
@@ -289,13 +297,19 @@ export default function ManageUsersPage() {
                       {/* Customer */}
                       <td className="px-9 py-4">
                         <div className="flex items-center gap-3">
-                          <Image
-                            src={user.image || "/avatar.png"}
-                            alt={user.name}
-                            className="h-10 w-10 shrink-0 rounded-full object-cover"
-                            width={500}
-                            height={500}
-                          />
+                          {user.image ? (
+                            <Image
+                              src={user.image || "/avatar.png"}
+                              alt={user.name}
+                              className="h-10 w-10 shrink-0 rounded-full object-cover"
+                              width={500}
+                              height={500}
+                            />
+                          ) : (
+                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#E8DCCB] text-[#352A24]">
+                              <User size={20} />
+                            </div>
+                          )}
 
                           <div className="min-w-0">
                             <p className="font-semibold text-[#38291F]">

@@ -11,8 +11,10 @@ import {
   Loader2,
 } from "lucide-react";
 import Link from "next/link";
+// import { getToken } from "@/lib/get-token";
+import { apiFetch } from "@/lib/api-fetch";
 
-const API_URL = process.env.NEXT_PUBLIC_SERVER_BASE_URL;
+// const API_URL = process.env.NEXT_PUBLIC_SERVER_BASE_URL;
 
 interface DashboardStats {
   totalCustomers: number;
@@ -76,11 +78,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await fetch(`${API_URL}/admin/overview`, {
-          //   credentials: "include",
-          cache: "no-store",
-        });
-
+        const response = await apiFetch("/admin/overview");
         const result = await response.json();
 
         if (!response.ok) {

@@ -5,8 +5,9 @@ import { authClient, useSession } from "@/lib/auth-client";
 import { toast } from "sonner";
 import { UserRound, Mail, Camera, Save, Loader2 } from "lucide-react";
 import Image from "next/image";
+import { apiFetch } from "@/lib/api-fetch";
 
-const API = process.env.NEXT_PUBLIC_SERVER_BASE_URL;
+// const API = process.env.NEXT_PUBLIC_SERVER_BASE_URL;
 const IMGBB_KEY = process.env.NEXT_PUBLIC_IMGBB_API_KEY;
 
 export default function CustomerProfilePage() {
@@ -100,7 +101,7 @@ function CustomerProfileForm({
     try {
       setSaving(true);
 
-      const res = await fetch(`${API}/profile`, {
+      const res = await apiFetch("/profile", {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",

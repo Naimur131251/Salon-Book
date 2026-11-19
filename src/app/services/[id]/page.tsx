@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import Image from "next/image";
+import { apiFetch } from "@/lib/api-fetch";
 
 interface IService {
   _id: string;
@@ -25,8 +26,7 @@ interface IService {
   status: "active" | "inactive";
 }
 
-const API_URL =
-  process.env.NEXT_PUBLIC_SERVER_BASE_URL || "http://localhost:5000";
+// const API_URL = process.env.NEXT_PUBLIC_SERVER_BASE_URL;
 
 function ServiceDetailsContent() {
   const params = useParams();
@@ -77,8 +77,7 @@ function ServiceDetailsContent() {
 
     const fetchBookedSlots = async () => {
       try {
-        const res = await fetch(
-          `${API_URL}/appointments/booked-slots?date=${appointmentDate}`,
+        const res = await apiFetch(`/appointments/booked-slots?date=${appointmentDate}`,
           {
             cache: "no-store",
             signal: controller.signal,
@@ -118,7 +117,7 @@ function ServiceDetailsContent() {
         setLoading(true);
         setError("");
 
-        const response = await fetch(`${API_URL}/services/${id}`, {
+        const response = await apiFetch(`/services/${id}`, {
           signal: controller.signal,
           cache: "no-store",
         });
@@ -173,7 +172,7 @@ function ServiceDetailsContent() {
     try {
       setSubmitting(true);
 
-      const response = await fetch(`${API_URL}/appointments`, {
+      const response = await apiFetch("/appointments", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -248,7 +247,7 @@ function ServiceDetailsContent() {
   const isActive = service.status === "active";
 
   return (
-    <main className="min-h-screen bg-[#FAF7F2] px-4 py-12 md:px-8 mt-10">
+    <main className="min-h-screen bg-[#FAF7F2] px-4 py-12 md:px-8">
       <div className="mx-auto max-w-6xl">
         {/* Back Button */}
         <Link
