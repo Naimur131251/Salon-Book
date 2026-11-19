@@ -1,16 +1,43 @@
+"use client";
+import { useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { Sparkles, ArrowRight, Scissors } from "lucide-react";
 
-export default function Hero() {
+export default function HeroSection() {
+  const [cursorPos, setCursorPos] = useState({ x: -100, y: -100 });
+  const [isHovered, setIsHovered] = useState(false);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setCursorPos({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    });
+  };
+
   return (
-    <section className="relative flex min-h-170 items-center overflow-hidden bg-[#352A24] md:min-h-187.5">
-        
+    <section
+      onMouseMove={handleMouseMove}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className="relative flex min-h-170 cursor-none items-center overflow-hidden bg-[#352A24] md:min-h-187.5"
+    >
+      {/* Custom Scissors Mouse Follower */}
+      <div
+        style={{
+          transform: `translate3d(${cursorPos.x - 20}px, ${cursorPos.y - 20}px, 0)`,
+          opacity: isHovered ? 1 : 0,
+        }}
+        className="pointer-events-none absolute left-0 top-0 z-50 hidden h-10 w-10 items-center justify-center rounded-full border border-[#D9B98B]/60 bg-[#352A24]/85 text-[#D9B98B] shadow-lg backdrop-blur-sm transition-opacity duration-200 md:flex"
+      >
+        <Scissors size={18} />
+      </div>
+
       {/* Background Image */}
       <div
         className="absolute inset-0 bg-cover bg-center"
         style={{
-          backgroundImage:
-            "url('https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=2000')",
+          backgroundImage: "url('https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=2000')",
         }}
       />
 
@@ -47,7 +74,7 @@ export default function Hero() {
           <div className="mt-9 flex flex-col gap-4 sm:flex-row">
             <Link
               href="/services"
-              className="group inline-flex items-center justify-center gap-3 rounded-full bg-[#B89B7A] px-7 py-4 text-sm font-semibold text-white transition duration-300 hover:bg-[#A78662]"
+              className="group inline-flex cursor-pointer items-center justify-center gap-3 rounded-full bg-[#B89B7A] px-7 py-4 text-sm font-semibold text-white transition duration-300 hover:bg-[#A78662]"
             >
               Explore Our Services
               <ArrowRight
@@ -58,7 +85,7 @@ export default function Hero() {
 
             <Link
               href="/about"
-              className="inline-flex items-center justify-center rounded-full border border-[#F5EBDD]/60 bg-white/5 px-7 py-4 text-sm font-semibold text-[#F8F3EB] backdrop-blur-sm transition hover:bg-white/15"
+              className="inline-flex cursor-pointer items-center justify-center rounded-full border border-[#F5EBDD]/60 bg-white/5 px-7 py-4 text-sm font-semibold text-[#F8F3EB] backdrop-blur-sm transition hover:bg-white/15"
             >
               Discover More
             </Link>
