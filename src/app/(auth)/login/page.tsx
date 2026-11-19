@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { authClient } from "@/lib/auth-client"; // আপনার authClient ফাইলের সঠিক পাথ দিন
 import {
   Scissors,
@@ -14,11 +14,15 @@ import {
   Sparkles,
   // Chrome,
 } from "lucide-react";
+import { toast } from "sonner";
 
 export default function LoginPage() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const searchParams = useSearchParams();
+
+  const callbackUrl = searchParams.get("callbackUrl") || "/";
 
   const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -28,62 +32,67 @@ export default function LoginPage() {
     const formData = new FormData(e.currentTarget);
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
-    const rememberMe = formData.get("rememberMe") === "on"; // চেকবক্স থাকলে তা ধরবে, না থাকলে নিচে true সেট করা আছে
+    const rememberMe = formData.get("rememberMe") === "on";
 
-    console.log("Attempting Login with:", { email, rememberMe });
+    if (!email || !password) {
+      toast.error("Missing Fields", {
+        description: "Please enter both email and password.",
+      });
+      setLoading(false);
+      return;
+    }
 
     try {
-      const { data, error } = await authClient.signIn.email({
+      const { error } = await authClient.signIn.email({
         email,
         password,
         rememberMe: rememberMe || true,
-        callbackURL: "/", // লগইন সফল হলে যে পেজে যাবে
+        callbackURL: callbackUrl, // লগইন সফল হলে যে পেজে যাবে
       });
 
-      // কনসোলে রেসপন্স চেক করা
-      console.log("Login Response Data:", data);
-      console.log("Login Response Error:", error);
-
       if (error) {
-        alert(error.message || "Invalid email or password!");
+        toast.error("Login Failed", {
+          description: error.message || "Invalid email or password!",
+        });
         setLoading(false);
         return;
       }
 
-      console.log("Login Successful!");
+      toast.success("Welcome Back!", {
+        description: "You have logged in successfully.",
+      });
+
       router.push("/");
     } catch (err) {
       console.error("Unexpected Login Error:", err);
-      alert("Something went wrong. Check console.");
+      toast.error("Something Went Wrong", {
+        description: "An unexpected error occurred. Please try again.",
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  // Google Registration
+  // Google Login
   const handleGoogleLogin = async () => {
     try {
       setLoading(true);
 
-      await authClient.signIn.social({
-        provider: "google",
-        callbackURL: "/",
+      toast.info("Signing in...", {
+        description: "Redirecting you to Google authentication.",
       });
 
-      // toast.add({
-      //   title: "Signing in...",
-      //   description: "Redirecting you to Google authentication.",
-      //   type: "info",
-      // });
+      await authClient.signIn.social({
+        provider: "google",
+        callbackURL: callbackUrl,
+      });
     } catch (err) {
       console.error("Google login error:", err);
       setLoading(false);
 
-      // toast.add({
-      //   title: "Login Failed",
-      //   description: "Could not authenticate with Google.",
-      //   type: "error",
-      // });
+      toast.error("Login Failed", {
+        description: "Could not authenticate with Google.",
+      });
     }
   };
 
@@ -246,7 +255,7 @@ export default function LoginPage() {
                     aria-label={
                       showPassword ? "Hide password" : "Show password"
                     }
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[#B89B7A]"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[#B89B7A] cursor-pointer"
                   >
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
@@ -259,10 +268,13 @@ export default function LoginPage() {
                   id="remember"
                   name="rememberMe"
                   type="checkbox"
-                  className="h-4 w-4 accent-[#765B46]"
+                  className="h-4 w-4 accent-[#765B46] cursor-pointer"
                 />
 
-                <label htmlFor="remember" className="text-xs text-[#8B796A]">
+                <label
+                  htmlFor="remember"
+                  className="text-xs text-[#8B796A] cursor-pointer"
+                >
                   Remember me
                 </label>
               </div>
@@ -271,7 +283,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="group flex w-full items-center justify-center gap-2 rounded-xl bg-[#352A24] py-4 text-sm font-semibold text-white transition hover:bg-[#765B46] disabled:cursor-not-allowed disabled:opacity-60"
+                className="group flex w-full items-center justify-center gap-2 rounded-xl bg-[#352A24] py-4 text-sm font-semibold text-white transition hover:bg-[#765B46] disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
               >
                 {loading ? (
                   "Signing In..."

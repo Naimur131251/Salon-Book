@@ -1,19 +1,13 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { notFound, useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import {
-  ArrowLeft,
-  CalendarDays,
-  Clock,
-  Loader2,
-  Scissors,
-  //   User,
-} from "lucide-react";
+import { ArrowLeft, CalendarDays, Clock, Loader2 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import Image from "next/image";
 import { apiFetch } from "@/lib/api-fetch";
+import { toast } from "sonner";
 
 interface IService {
   _id: string;
@@ -77,7 +71,8 @@ function ServiceDetailsContent() {
 
     const fetchBookedSlots = async () => {
       try {
-        const res = await apiFetch(`/appointments/booked-slots?date=${appointmentDate}`,
+        const res = await apiFetch(
+          `/appointments/booked-slots?date=${appointmentDate}`,
           {
             cache: "no-store",
             signal: controller.signal,
@@ -95,10 +90,21 @@ function ServiceDetailsContent() {
           slots: result.data || [],
         });
 
-        setTimeSlot((prev) => (result.data?.includes(prev) ? "" : prev));
+        setTimeSlot((prev) => {
+          if (result.data?.includes(prev)) {
+            toast.warning("Slot Unavailable", {
+              description: "Your selected time slot was just booked.",
+            });
+            return "";
+          }
+          return prev;
+        });
       } catch (error) {
         if (error instanceof Error && error.name !== "AbortError") {
           console.error("Failed to fetch booked slots:", error);
+          toast.error("Failed to load available slots", {
+            description: error.message,
+          });
         }
       }
     };
@@ -132,6 +138,9 @@ function ServiceDetailsContent() {
       } catch (err) {
         if (err instanceof Error && err.name !== "AbortError") {
           setError(err.message);
+          toast.error("Error Loading Service", {
+            description: err.message,
+          });
         }
       } finally {
         if (!controller.signal.aborted) {
@@ -155,17 +164,39 @@ function ServiceDetailsContent() {
     setSuccess("");
 
     if (!user) {
-      router.push("/login");
+      toast.info("Login Required", {
+        description: "Please login first to book an appointment.",
+      });
+      router.push(
+        `/login?callbackUrl=${encodeURIComponent(`/services/${id}`)}`,
+      );
       return;
     }
 
     if (role !== "customer") {
-      setBookingError("Only customers can book appointments.");
+      const msg = "Only customers can book appointments.";
+      setBookingError(msg);
+      toast.error("Access Denied", {
+        description: msg,
+      });
       return;
     }
 
     if (!service || service.status !== "active") {
-      setBookingError("This service is currently unavailable.");
+      const msg = "This service is currently unavailable.";
+      setBookingError(msg);
+      toast.error("Service Unavailable", {
+        description: msg,
+      });
+      return;
+    }
+
+    if (!appointmentDate || !timeSlot) {
+      const msg = "Please select both an appointment date and a time slot.";
+      setBookingError(msg);
+      toast.warning("Incomplete Details", {
+        description: msg,
+      });
       return;
     }
 
@@ -177,7 +208,6 @@ function ServiceDetailsContent() {
         headers: {
           "Content-Type": "application/json",
         },
-        // credentials: "include",
         body: JSON.stringify({
           customerId: user.id,
           serviceId: service._id,
@@ -193,7 +223,12 @@ function ServiceDetailsContent() {
         throw new Error(result.message || "Booking failed");
       }
 
-      setSuccess(result.message);
+      const successMsg = result.message || "Appointment booked successfully!";
+      setSuccess(successMsg);
+      toast.success("Appointment Confirmed!", {
+        description: successMsg,
+      });
+
       setBookedSlots((prev) =>
         prev.date === appointmentDate
           ? { ...prev, slots: [...prev.slots, timeSlot] }
@@ -203,9 +238,12 @@ function ServiceDetailsContent() {
       setTimeSlot("");
       setMessage("");
     } catch (err) {
-      setBookingError(
-        err instanceof Error ? err.message : "Something went wrong",
-      );
+      const errMsg =
+        err instanceof Error ? err.message : "Something went wrong";
+      setBookingError(errMsg);
+      toast.error("Booking Failed", {
+        description: errMsg,
+      });
     } finally {
       setSubmitting(false);
     }
@@ -222,24 +260,7 @@ function ServiceDetailsContent() {
 
   // Error
   if (error || !service) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-[#FAF7F2] px-4 text-center">
-        <Scissors size={45} className="mb-5 text-[#A47754]" />
-
-        <h1 className="text-3xl font-bold text-[#38291F]">Service Not Found</h1>
-
-        <p className="mt-3 text-[#806F62]">
-          {error || "The requested service does not exist."}
-        </p>
-
-        <Link
-          href="/services"
-          className="mt-6 rounded-xl bg-[#80583D] px-6 py-3 font-semibold text-white hover:bg-[#62432E]"
-        >
-          Browse Services
-        </Link>
-      </div>
-    );
+    notFound();
   }
 
   const isCustomer = !!user && role === "customer";

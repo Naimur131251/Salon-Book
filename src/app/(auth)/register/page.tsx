@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRef, useState } from "react";
-import { useRouter } from "next/navigation"; // রিডাইরেক্ট করার জন্য
+import { useRouter, useSearchParams } from "next/navigation"; // রিডাইরেক্ট করার জন্য
 import { authClient } from "@/lib/auth-client"; // আপনার authClient ফাইলের সঠিক পাথ দিন
 import {
   Scissors,
@@ -19,6 +19,7 @@ import {
   Check,
 } from "lucide-react";
 import Image from "next/image";
+import { toast } from "sonner";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -27,17 +28,13 @@ export default function RegisterPage() {
   const [imageType, setImageType] = useState<"upload" | "url">("upload");
 
   // ফর্মের ইনপুট স্টেটগুলো
-  // const [name, setName] = useState("");
-  // const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  // const [confirmPassword, setConfirmPassword] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [preview, setPreview] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // লোডিং এবং এরর স্টেট
-  // const [loading, setLoading] = useState(false);
-  // const [errorMessage, setErrorMessage] = useState("");
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") || "/";
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -60,17 +57,23 @@ export default function RegisterPage() {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      alert("Please select a valid image.");
+      toast.error("Invalid File", {
+        description: "Please select a valid image file.",
+      });
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      alert("Image size must be less than 5MB.");
+      toast.error("File Too Large", {
+        description: "Image size must be less than 5MB.",
+      });
       return;
     }
 
     setPreview(URL.createObjectURL(file));
-    // নোট: লোকাল ফাইল আপলোড করলে সেটি Cloudinary বা S3-তে আপলোড করে URL নিতে হবে
+    toast.success("Image Selected", {
+      description: "Profile photo preview updated.",
+    });
   };
 
   const handleImageUrl = (url: string) => {
@@ -82,51 +85,59 @@ export default function RegisterPage() {
   const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    // ফর্ম থেকে সরাসরি সব ডেটা নেওয়া
     const formData = new FormData(e.currentTarget);
     const name = formData.get("name") as string;
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
-    const confirmPassword = formData.get("confirmPassword") as string; // আপনার Confirm Password ইনপুটে name="confirmPassword" থাকলে এটি কাজ করবে
+    const confirmPassword = formData.get("confirmPassword") as string;
 
-    // কনসোলে চেক করার জন্য ফর্মের ডেটা প্রিন্ট করা
-    console.log("Form Submitted Data:", {
-      name,
-      email,
-      password,
-      image: imageType === "url" ? imageUrl : "Local file selected",
-    });
+    // পাসওয়ার্ড রুলস চেক
+    if (password.length < 8) {
+      toast.error("Weak Password", {
+        description: "Password must be at least 8 characters long.",
+      });
+      return;
+    }
 
-    // পাসওয়ার্ড ম্যাচিং চেক (যদি confirmPassword ফিল্ড থাকে)
+    // পাসওয়ার্ড ম্যাচিং চেক
     if (confirmPassword && password !== confirmPassword) {
-      console.error("Error: Passwords do not match!");
-      alert("Passwords do not match!");
+      toast.error("Password Mismatch", {
+        description: "Passwords do not match. Please check again.",
+      });
       return;
     }
 
     try {
-      const { data, error } = await authClient.signUp.email({
+      setLoading(true);
+
+      const { error } = await authClient.signUp.email({
         email,
         password,
         name,
         image: imageType === "url" && imageUrl ? imageUrl : undefined,
-        callbackURL: "/dashboard",
+        callbackURL: callbackUrl,
       });
 
-      // কনসোলে রেসপন্স চেক করা
-      console.log("Better Auth Response Data:", data);
-      console.log("Better Auth Response Error:", error);
-
       if (error) {
-        alert(error.message || "Sign up failed!");
+        toast.error("Registration Failed", {
+          description: error.message || "Could not create your account.",
+        });
+        setLoading(false);
         return;
       }
 
-      alert("Account created successfully!");
+      toast.success("Account Created!", {
+        description: "Welcome to Salon Book! Redirecting...",
+      });
+
       router.push("/");
-      // প্রয়োজনে এখানে router.push("/dashboard") দিতে পারেন
     } catch (err) {
       console.error("Unexpected Error:", err);
+      toast.error("Something Went Wrong", {
+        description: "An unexpected error occurred. Please try again.",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -135,25 +146,21 @@ export default function RegisterPage() {
     try {
       setLoading(true);
 
-      await authClient.signIn.social({
-        provider: "google",
-        callbackURL: "/",
+      toast.info("Signing in...", {
+        description: "Redirecting you to Google authentication.",
       });
 
-      // toast.add({
-      //   title: "Signing in...",
-      //   description: "Redirecting you to Google authentication.",
-      //   type: "info",
-      // });
+      await authClient.signIn.social({
+        provider: "google",
+        callbackURL: callbackUrl,
+      });
     } catch (err) {
       console.error("Google login error:", err);
       setLoading(false);
 
-      // toast.add({
-      //   title: "Login Failed",
-      //   description: "Could not authenticate with Google.",
-      //   type: "error",
-      // });
+      toast.error("Login Failed", {
+        description: "Could not authenticate with Google.",
+      });
     }
   };
 
@@ -448,7 +455,7 @@ export default function RegisterPage() {
                     aria-label={
                       showPassword ? "Hide password" : "Show password"
                     }
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[#B89B7A]"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[#B89B7A] cursor-pointer"
                   >
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
@@ -504,7 +511,7 @@ export default function RegisterPage() {
                     aria-label={
                       showConfirmPassword ? "Hide password" : "Show password"
                     }
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[#B89B7A]"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[#B89B7A] cursor-pointer"
                   >
                     {showConfirmPassword ? (
                       <EyeOff size={18} />
@@ -521,7 +528,7 @@ export default function RegisterPage() {
                   id="terms"
                   type="checkbox"
                   required
-                  className="mt-1 h-4 w-4 accent-[#765B46]"
+                  className="mt-1 h-4 w-4 accent-[#765B46] cursor-pointer"
                 />
 
                 <label
@@ -530,14 +537,14 @@ export default function RegisterPage() {
                 >
                   I agree to the{" "}
                   <Link
-                    href="/terms"
+                    href="#"
                     className="font-semibold text-[#765B46] underline"
                   >
                     Terms & Conditions
                   </Link>{" "}
                   and{" "}
                   <Link
-                    href="/privacy"
+                    href="#"
                     className="font-semibold text-[#765B46] underline"
                   >
                     Privacy Policy
@@ -549,7 +556,7 @@ export default function RegisterPage() {
               {/* Register Button */}
               <button
                 type="submit"
-                className="group flex w-full items-center justify-center gap-2 rounded-xl bg-[#352A24] py-4 text-sm font-semibold text-white transition hover:bg-[#765B46]"
+                className="group flex w-full items-center justify-center gap-2 rounded-xl bg-[#352A24] py-4 text-sm font-semibold text-white transition hover:bg-[#765B46] cursor-pointer"
               >
                 Create Account
                 <ArrowRight

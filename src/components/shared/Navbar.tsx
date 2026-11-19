@@ -15,6 +15,7 @@ import {
 
 import { authClient } from "@/lib/auth-client";
 import Image from "next/image";
+import { toast } from "sonner";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -37,15 +38,32 @@ export default function Navbar() {
   // Logout
   const handleLogout = async () => {
     try {
-      await authClient.signOut();
+      await authClient.signOut({
+        fetchOptions: {
+          onSuccess: () => {
+            setProfileOpen(false);
+            setIsOpen(false);
 
-      setProfileOpen(false);
-      setIsOpen(false);
+            toast.success("Logged Out", {
+              description: "You have been signed out successfully.",
+            });
 
-      router.push("/");
-      router.refresh();
+            router.push("/");
+            router.refresh();
+          },
+          onError: (ctx) => {
+            toast.error("Logout Failed", {
+              description:
+                ctx.error.message || "Could not sign out. Try again.",
+            });
+          },
+        },
+      });
     } catch (error) {
       console.error("Logout failed:", error);
+      toast.error("Something went wrong", {
+        description: "Could not complete logout.",
+      });
     }
   };
 

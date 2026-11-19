@@ -360,6 +360,22 @@ function CustomerAppointmentsContent() {
 
                   {/* Payment and Cancel Buttons */}
                   <div className="flex flex-wrap gap-2">
+                    {item.paymentStatus === "unpaid" &&
+                      ["pending", "confirmed"].includes(item.status) && (
+                        <button
+                          disabled={processing === item._id}
+                          onClick={() => handleCancel(item._id)}
+                          className="flex shrink-0 items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-100 disabled:opacity-50 cursor-pointer"
+                        >
+                          {processing === item._id ? (
+                            <Loader2 size={14} className="animate-spin" />
+                          ) : (
+                            <XCircle size={14} />
+                          )}
+                          Cancel
+                        </button>
+                      )}
+
                     {item.status !== "cancelled" &&
                       (item.paymentStatus === "paid" ? (
                         <span className="rounded-lg bg-green-50 px-4 py-2 text-xs font-semibold text-green-600">
@@ -369,7 +385,7 @@ function CustomerAppointmentsContent() {
                         <button
                           disabled={processing === item._id}
                           onClick={() => handlePayment(item._id)}
-                          className="flex shrink-0 items-center gap-2 rounded-lg bg-[#8B5E3C] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#70482E] disabled:cursor-not-allowed disabled:opacity-50 sm:px-4"
+                          className="flex shrink-0 items-center gap-2 rounded-lg bg-[#8B5E3C] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#70482E] disabled:cursor-not-allowed disabled:opacity-50 sm:px-4 cursor-pointer"
                         >
                           {processing === item._id ? (
                             <Loader2 size={14} className="animate-spin" />
@@ -381,22 +397,6 @@ function CustomerAppointmentsContent() {
                             : "Pay Now"}
                         </button>
                       ))}
-
-                    {item.paymentStatus === "unpaid" &&
-                      ["pending", "confirmed"].includes(item.status) && (
-                        <button
-                          disabled={processing === item._id}
-                          onClick={() => handleCancel(item._id)}
-                          className="flex shrink-0 items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-100 disabled:opacity-50"
-                        >
-                          {processing === item._id ? (
-                            <Loader2 size={14} className="animate-spin" />
-                          ) : (
-                            <XCircle size={14} />
-                          )}
-                          Cancel
-                        </button>
-                      )}
                   </div>
                 </div>
               </div>
