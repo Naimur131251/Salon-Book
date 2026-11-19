@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { apiFetch } from "@/lib/api-fetch";
+// import Link from "next/link";
 
 // const API = process.env.NEXT_PUBLIC_SERVER_BASE_URL;
 
@@ -65,7 +66,8 @@ export default function MyAppointmentsPage() {
     if (!customerId) return;
 
     try {
-      const res = await apiFetch(`/customer/appointments?customerId=${encodeURIComponent(customerId)}`,
+      const res = await apiFetch(
+        `/customer/appointments?customerId=${encodeURIComponent(customerId)}`,
         { cache: "no-store" },
       );
 
@@ -126,22 +128,30 @@ export default function MyAppointmentsPage() {
     try {
       setProcessing(id);
 
-      // This endpoint will create a Stripe Checkout Session.
-      const res = await apiFetch("/payments/create-checkout-session", {
+      const res = await apiFetch("/create-checkout-session", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ appointmentId: id }),
+        body: JSON.stringify({
+          appointmentId: id,
+        }),
       });
 
       const result = await res.json();
+      console.log(result);
+      
 
-      if (!res.ok) throw new Error(result.message);
+      if (!res.ok) {
+        throw new Error(result.message || "Payment failed");
+      }
 
-      if (!result.url) throw new Error("Checkout URL not found");
+      if (!result.url) {
+        throw new Error("Stripe checkout URL not found");
+      }
 
-      window.location.assign(result.url);
+      // Redirect to Stripe Checkout
+      window.location.href = result.url;
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Payment failed");
+
       setProcessing("");
     }
   };
@@ -315,14 +325,17 @@ export default function MyAppointmentsPage() {
                           <button
                             disabled={processing === item._id}
                             onClick={() => handlePayment(item._id)}
-                            className="flex items-center gap-2 rounded-lg bg-[#80583D] px-4 py-2 text-sm font-semibold text-white hover:bg-[#62432E] disabled:opacity-50"
+                            className="flex items-center gap-2 rounded-lg bg-[#80583D] px-4 py-2 text-sm font-semibold text-white hover:bg-[#62432E] disabled:cursor-not-allowed disabled:opacity-50"
                           >
                             {processing === item._id ? (
                               <Loader2 size={16} className="animate-spin" />
                             ) : (
                               <CreditCard size={16} />
                             )}
-                            Pay Now
+
+                            {processing === item._id
+                              ? "Processing..."
+                              : "Pay Now"}
                           </button>
                         )}
 

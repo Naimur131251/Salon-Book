@@ -2,10 +2,7 @@ import { getToken } from "@/lib/get-token";
 
 const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_BASE_URL;
 
-export const apiFetch = async (
-  endpoint: string,
-  options: RequestInit = {}
-) => {
+export const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
   const token = await getToken();
 
   const response = await fetch(`${SERVER_URL}${endpoint}`, {
@@ -19,10 +16,7 @@ export const apiFetch = async (
 
   // Unauthorized or Forbidden
   if (response.status === 401 || response.status === 403) {
-    if (typeof window !== "undefined") {
-      window.location.assign("/unauthorized");
-    }
-    throw new Error("Unauthorized access");
+    console.log("Unauthorized access");
   }
 
   return response;
