@@ -1,21 +1,11 @@
 "use client";
 import Link from "next/link";
-import {
-  Scissors,
-  //   Facebook,
-  //   Instagram,
-  //   Twitter,
-  ArrowRight,
-  MapPin,
-  Phone,
-  Mail,
-} from "lucide-react";
+import { Scissors, ArrowRight, MapPin, Phone, Mail } from "lucide-react";
+import { FaFacebookF, FaInstagram, FaXTwitter } from "react-icons/fa6";
 
 const quickLinks = [
   { name: "Home", href: "/" },
   { name: "Services", href: "/services" },
-  { name: "About Us", href: "/about" },
-  { name: "Contact", href: "/contact" },
 ];
 
 const serviceLinks = [
@@ -23,6 +13,12 @@ const serviceLinks = [
   { name: "Hair Coloring", href: "/services" },
   { name: "Skin Care", href: "/services" },
   { name: "Beauty Treatment", href: "/services" },
+];
+
+const socialLinks = [
+  { icon: FaFacebookF, href: "https://facebook.com", label: "Facebook" },
+  { icon: FaInstagram, href: "https://instagram.com", label: "Instagram" },
+  { icon: FaXTwitter, href: "https://x.com", label: "X (Twitter)" },
 ];
 
 export default function Footer() {
@@ -81,20 +77,18 @@ export default function Footer() {
           </p>
 
           <div className="mt-6 flex items-center gap-3">
-            {/* {[
-            //   { icon: Facebook, href: "#" },
-            //   { icon: Instagram, href: "#" },
-            //   { icon: Twitter, href: "#" },
-            ].map(({ icon: Icon, href }, index) => (
-              <Link
-                key={index}
+            {socialLinks.map(({ icon: Icon, href, label }) => (
+              <a
+                key={label}
                 href={href}
-                aria-label="Social media"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={label}
                 className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 text-[#D5C5B5] transition hover:border-[#B89B7A] hover:bg-[#B89B7A] hover:text-white"
               >
                 <Icon size={18} />
-              </Link>
-            ))} */}
+              </a>
+            ))}
           </div>
         </div>
 
@@ -163,10 +157,10 @@ export default function Footer() {
           </p>
 
           <div className="flex gap-6 text-xs text-[#BBAA99]">
-            <Link href="/privacy" className="transition hover:text-[#B89B7A]">
+            <Link href="#" className="transition hover:text-[#B89B7A]">
               Privacy Policy
             </Link>
-            <Link href="/terms" className="transition hover:text-[#B89B7A]">
+            <Link href="#" className="transition hover:text-[#B89B7A]">
               Terms & Conditions
             </Link>
           </div>

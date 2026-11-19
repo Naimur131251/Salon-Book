@@ -55,7 +55,7 @@ export default function Navbar() {
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-[#E8DCCB]/70 bg-white/90 text-[#352A24] backdrop-blur-md">
+    <header className="sticky top-0 z-50 w-full border-b border-[#E8DCCB]/70 bg-white/50 text-[#352A24] backdrop-blur-md">
       {/* Main Navbar */}
       <nav className="relative mx-auto grid h-16 max-w-7xl grid-cols-[1fr_auto_1fr] items-center px-4 sm:px-6 lg:px-8">
         {/* Mobile Menu Button */}
@@ -91,7 +91,7 @@ export default function Navbar() {
             <Link
               key={link.name}
               href={link.href}
-              className="text-sm font-medium text-[#765B46] transition hover:text-[#B89B7A]"
+              className="relative text-sm font-medium text-[#765B46] after:content-[''] after:absolute after:left-0 after:-bottom-1 after:h-[1.5px] after:w-0 after:bg-amber-950 after:transition-all after:duration-300 hover:after:w-full"
             >
               {link.name}
             </Link>
@@ -189,7 +189,7 @@ export default function Navbar() {
 
                 <Link
                   href="/register"
-                  className="rounded-full bg-[#352A24] px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-[#765B46]"
+                  className="rounded-full bg-[#80583D] px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-[#62432E]"
                 >
                   Sign Up
                 </Link>
@@ -205,7 +205,7 @@ export default function Navbar() {
                   }}
                   aria-label="Open authentication menu"
                   aria-expanded={profileOpen}
-                  className="flex h-10 w-10 items-center justify-center rounded-full border border-[#B89B7A]/40 bg-white text-[#352A24] transition hover:bg-[#E8DCCB]"
+                  className="flex h-10 w-10 items-center justify-center rounded-full border border-[#B89B7A]/40 bg-white/70 text-[#352A24] transition hover:bg-[#E8DCCB]"
                 >
                   <User size={21} />
                 </button>
@@ -247,7 +247,7 @@ export default function Navbar() {
 
       {/* Mobile Navigation Menu */}
       {isOpen && (
-        <div className="absolute left-0 right-0 top-full z-40 border-t border-[#E8DCCB] bg-[#F8F3EB]/95 px-4 py-4 shadow-xl backdrop-blur-xl md:hidden">
+        <div className="absolute left-0 right-0 top-full z-40 border-t bg-white/90 px-4 py-4 shadow-xl backdrop-blur-md md:hidden">
           <nav className="mx-auto flex max-w-7xl flex-col gap-1">
             {navLinks.map((link) => (
               <Link
