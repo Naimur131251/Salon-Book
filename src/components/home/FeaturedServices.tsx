@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Clock, Sparkles, Loader2 } from "lucide-react";
 import Image from "next/image";
+import { motion } from "motion/react";
 
 const API = process.env.NEXT_PUBLIC_SERVER_BASE_URL;
 
@@ -48,43 +49,50 @@ export default function FeaturedServices() {
   }, []);
 
   return (
-    <section className="bg-[#FAF7F2] px-5 py-20 lg:px-8">
+    <section className="relative overflow-hidden bg-[#FAF7F2] px-5 py-24 lg:px-8">
       <div className="mx-auto max-w-7xl">
         {/* Heading */}
-        <div className="mb-12 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+        <div className="mb-16 flex flex-col justify-between gap-6 md:flex-row md:items-end">
           <div>
-            <div className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-[3px] text-[#A47754]">
-              <Sparkles size={17} />
-              Our Special Treatments
+            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#DCC8B4] bg-white px-4 py-2 text-xs font-bold uppercase tracking-[2px] text-[#A47754]">
+              <Sparkles size={15} />
+              The Art of Beauty
             </div>
 
-            <h2 className="text-3xl font-bold text-[#38291F] md:text-4xl">
-              Featured Salon Services
+            <h2 className="text-4xl font-bold tracking-tight text-[#38291F] md:text-5xl">
+              Featured
+              <span className="ml-4 font-serif font-normal italic text-[#A47754]">
+                Salon
+              </span>{" "}
+              Services
             </h2>
 
-            <p className="mt-3 max-w-xl leading-7 text-[#806F62]">
-              Discover our handpicked beauty treatments and give yourself the
-              care you deserve.
+            <p className="mt-5 max-w-lg text-sm leading-7 text-[#806F62] md:text-base">
+              Experience the perfect blend of luxury, care and expertise.
+              Discover treatments designed to bring out your natural beauty.
             </p>
           </div>
 
           <Link
             href="/services"
-            className="flex items-center gap-2 font-semibold text-[#80583D] transition hover:text-[#38291F]"
+            className="group flex w-fit items-center gap-3 rounded-full border border-[#80583D] px-6 py-3.5 text-sm font-semibold text-[#80583D] transition-all duration-300 hover:bg-[#80583D] hover:text-white"
           >
-            View All Services
-            <ArrowRight size={18} />
+            Explore All Services
+            <ArrowRight
+              size={17}
+              className="transition-transform group-hover:translate-x-1"
+            />
           </Link>
         </div>
 
-        {/* Loading */}
+        {/* Cards */}
         {loading ? (
-          <div className="flex min-h-60 items-center justify-center">
+          <div className="flex min-h-80 items-center justify-center">
             <Loader2 size={35} className="animate-spin text-[#80583D]" />
           </div>
         ) : services.length === 0 ? (
-          <div className="rounded-2xl border border-[#E9DED2] bg-white p-12 text-center">
-            <p className="font-medium text-[#38291F]">
+          <div className="rounded-3xl bg-white p-12 text-center">
+            <p className="font-semibold text-[#38291F]">
               No featured services available.
             </p>
             <p className="mt-2 text-sm text-[#806F62]">
@@ -92,70 +100,139 @@ export default function FeaturedServices() {
             </p>
           </div>
         ) : (
-          /* Service Cards */
           <div className="grid gap-7 sm:grid-cols-2 lg:grid-cols-3">
-            {services.slice(0, 6).map((service) => (
-              <div
+            {services.slice(0, 6).map((service, index) => (
+              <motion.div
                 key={service._id}
-                className="group overflow-hidden rounded-2xl border border-[#E9DED2] bg-white transition duration-300 hover:-translate-y-1 hover:shadow-xl"
+                initial={{
+                  opacity: 0,
+                  y: 80,
+                  scale: 0.95,
+                }}
+                whileInView={{
+                  opacity: 1,
+                  y: 0,
+                  scale: 1,
+                }}
+                viewport={{
+                  once: false,
+                  amount: 0.2,
+                }}
+                transition={{
+                  duration: 0.7,
+                  delay: index * 0.12,
+                  ease: [0.22, 1, 0.36, 1],
+                }}
               >
-                {/* Image */}
-                <div className="relative h-60 overflow-hidden">
-                  <Image
-                    src={
-                      service.image ||
-                      service.imageUrl ||
-                      "/images/service-placeholder.jpg"
-                    }
-                    alt={service.serviceName}
-                    className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                    width={500}
-                    height={500}
-                  />
+                <Link
+                  href={`/services/${service._id}`}
+                  className="group relative block"
+                >
+                  <article className="relative isolate overflow-hidden rounded-[28px] border border-[#E9DED2] bg-white shadow-sm transition-all duration-500 hover:-translate-y-3 hover:border-[#B99370] hover:shadow-[0_25px_60px_rgba(76,48,29,0.18)]">
+                    {/* Image */}
+                    <div className="relative h-97.5 overflow-hidden">
+                      <Image
+                        src={
+                          service.image ||
+                          service.imageUrl ||
+                          "/images/service-placeholder.jpg"
+                        }
+                        alt={service.serviceName}
+                        width={600}
+                        height={700}
+                        className="h-full w-full object-cover transition-all duration-1000 ease-out group-hover:scale-110 group-hover:saturate-110"
+                      />
 
-                  <span className="absolute left-4 top-4 rounded-full bg-white/95 px-4 py-2 text-xs font-semibold text-[#80583D] shadow-sm">
-                    {service.category}
-                  </span>
-                </div>
+                      {/* Animated Overlay */}
+                      <div className="absolute inset-0 bg-linear-to-t from-[#20140E]/95 via-[#20140E]/15 to-black/10 opacity-75 transition-all duration-500 group-hover:opacity-95" />
 
-                {/* Content */}
-                <div className="p-6">
-                  <h3 className="text-xl font-bold text-[#38291F] transition group-hover:text-[#80583D]">
-                    {service.serviceName}
-                  </h3>
+                      {/* Top Details */}
+                      <div className="absolute left-5 right-5 top-5 flex items-center justify-between">
+                        <span className="rounded-full border border-white/30 bg-white/20 px-4 py-2 text-xs font-semibold tracking-wide text-white backdrop-blur-xl">
+                          {service.category}
+                        </span>
 
-                  <p className="mt-3 line-clamp-2 min-h-12 text-sm leading-6 text-[#806F62]">
-                    {service.description}
-                  </p>
+                        <span className="flex h-11 w-11 items-center justify-center rounded-full border border-white/40 bg-white/20 font-serif text-sm text-white backdrop-blur-xl transition-all duration-500 group-hover:rotate-12 group-hover:bg-white group-hover:text-[#80583D]">
+                          {String(index + 1).padStart(2, "0")}
+                        </span>
+                      </div>
 
-                  {/* Price & Duration */}
-                  <div className="mt-5 flex items-center justify-between border-t border-[#E9DED2] pt-5">
-                    <div>
-                      <p className="text-xs text-[#A18B78]">Service Price</p>
-                      <p className="mt-1 text-xl font-bold text-[#80583D]">
-                        ৳{service.price}
-                      </p>
+                      {/* Price Badge */}
+                      <div className="absolute right-5 top-24 translate-x-3 rounded-2xl border border-white/30 bg-white/90 px-4 py-3 opacity-0 shadow-xl backdrop-blur-xl transition-all duration-500 group-hover:translate-x-0 group-hover:opacity-100">
+                        <p className="text-[10px] font-semibold uppercase tracking-widest text-[#A18B78]">
+                          Treatment Price
+                        </p>
+                        <p className="mt-1 text-xl font-bold text-[#80583D]">
+                          ৳{service.price}
+                        </p>
+                      </div>
+
+                      {/* Bottom Content */}
+                      <div className="absolute inset-x-0 bottom-0 p-6 sm:p-7">
+                        <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[2px] text-[#E6C7A8]">
+                          <span className="h-px w-7 bg-[#E6C7A8]" />
+                          Signature Experience
+                        </div>
+
+                        <h3 className="text-2xl font-bold leading-tight text-white transition-transform duration-500 group-hover:-translate-y-1 sm:text-3xl">
+                          {service.serviceName}
+                        </h3>
+
+                        {/* Reveal Description */}
+                        <div className="grid grid-rows-[0fr] opacity-0 transition-all duration-500 group-hover:grid-rows-[1fr] group-hover:opacity-100">
+                          <div className="overflow-hidden">
+                            <p className="mt-3 line-clamp-2 text-sm leading-6 text-white/80">
+                              {service.description}
+                            </p>
+
+                            <div className="mt-5 flex items-center justify-between border-t border-white/25 pt-4">
+                              <div className="flex items-center gap-2 text-sm text-white/90">
+                                <Clock size={16} className="text-[#E6C7A8]" />
+                                {service.duration} min
+                              </div>
+
+                              <span className="flex items-center gap-2 text-sm font-semibold text-[#E6C7A8]">
+                                Discover
+                                <ArrowRight
+                                  size={17}
+                                  className="transition-transform duration-300 group-hover:translate-x-2"
+                                />
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Default View */}
+                        <div className="mt-5 flex items-center justify-between border-t border-white/30 pt-4 transition-all duration-300 group-hover:translate-y-2 group-hover:opacity-0">
+                          <p className="text-xl font-bold text-white">
+                            ৳{service.price}
+                          </p>
+
+                          <div className="flex items-center gap-2 text-sm text-white/80">
+                            <Clock size={15} />
+                            {service.duration} min
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Decorative Accent */}
+                      <div className="absolute bottom-0 left-0 h-1 w-0 bg-[#D6B18D] transition-all duration-700 group-hover:w-full" />
                     </div>
-
-                    <div className="flex items-center gap-2 text-sm text-[#806F62]">
-                      <Clock size={17} className="text-[#A47754]" />
-                      {service.duration} min
-                    </div>
-                  </div>
-
-                  {/* Details Button */}
-                  <Link
-                    href={`/services/${service._id}`}
-                    className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#80583D] py-3 font-semibold text-white transition hover:bg-[#62432E]"
-                  >
-                    View Details
-                    <ArrowRight size={17} />
-                  </Link>
-                </div>
-              </div>
+                  </article>
+                </Link>
+              </motion.div>
             ))}
           </div>
         )}
+
+        {/* Bottom Note */}
+        <div className="mt-12 flex flex-col items-center justify-center gap-3 text-center sm:flex-row">
+          <span className="h-px w-10 bg-[#DCC8B4]" />
+          <p className="text-xs font-medium uppercase tracking-[3px] text-[#A18B78]">
+            Beauty is an experience, not just a service
+          </p>
+          <span className="h-px w-10 bg-[#DCC8B4]" />
+        </div>
       </div>
     </section>
   );

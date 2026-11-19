@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Award,
   CalendarCheck,
@@ -6,6 +8,7 @@ import {
   Sparkles,
   CheckCircle2,
 } from "lucide-react";
+import { motion } from "motion/react";
 
 const features = [
   {
@@ -79,26 +82,46 @@ export default function WhyChooseUs() {
 
         {/* Right Feature Cards */}
         <div className="grid gap-5 sm:grid-cols-2">
-          {features.map((feature) => {
+          {features.map((feature, index) => {
             const Icon = feature.icon;
 
             return (
-              <div
+              <motion.div
                 key={feature.title}
-                className="group rounded-2xl border border-[#E6D9C8] bg-white p-7 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-[#B89B7A] hover:shadow-md"
+                initial={{
+                  opacity: 0,
+                  y: 70,
+                  scale: 0.95,
+                }}
+                whileInView={{
+                  opacity: 1,
+                  y: 0,
+                  scale: 1,
+                }}
+                viewport={{
+                  once: false,
+                  amount: 0.2,
+                }}
+                transition={{
+                  duration: 0.7,
+                  delay: (index % 2) * 0.15,
+                  ease: [0.22, 1, 0.36, 1],
+                }}
               >
-                <div className="mb-6 inline-flex rounded-xl bg-[#F8F3EB] p-4 text-[#80583D] transition duration-300 group-hover:bg-[#80583D] group-hover:text-white">
-                  <Icon size={26} />
+                <div className="group h-full rounded-2xl border border-[#E6D9C8] bg-white p-7 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-[#B89B7A] hover:shadow-md">
+                  <div className="mb-6 inline-flex rounded-xl bg-[#F8F3EB] p-4 text-[#80583D] transition duration-300 group-hover:bg-[#80583D] group-hover:text-white">
+                    <Icon size={26} />
+                  </div>
+
+                  <h3 className="font-serif text-lg font-bold text-[#352A24]">
+                    {feature.title}
+                  </h3>
+
+                  <p className="mt-3 text-sm leading-7 text-[#7A6859]">
+                    {feature.description}
+                  </p>
                 </div>
-
-                <h3 className="font-serif text-lg font-bold text-[#352A24]">
-                  {feature.title}
-                </h3>
-
-                <p className="mt-3 text-sm leading-7 text-[#7A6859]">
-                  {feature.description}
-                </p>
-              </div>
+              </motion.div>
             );
           })}
         </div>
