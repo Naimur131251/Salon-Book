@@ -37,26 +37,31 @@ const stats = [
     key: "totalAppointments",
     title: "Total Appointments",
     icon: CalendarDays,
+    href: "/dashboard/customer/appointments",
   },
   {
     key: "pendingAppointments",
     title: "Pending",
     icon: Clock,
+    href: "/dashboard/customer/appointments?status=pending",
   },
   {
     key: "confirmedAppointments",
     title: "Confirmed",
     icon: CheckCircle2,
+    href: "/dashboard/customer/appointments?status=confirmed",
   },
   {
     key: "cancelledAppointments",
     title: "Cancelled",
     icon: XCircle,
+    href: "/dashboard/customer/appointments?status=cancelled",
   },
   {
     key: "paidAppointments",
     title: "Paid Appointments",
     icon: CreditCard,
+    href: "/dashboard/customer/appointments?status=paid",
   },
 ] as const;
 
@@ -124,20 +129,25 @@ export default function CustomerDashboard() {
           const Icon = item.icon;
 
           return (
-            <div
+            <Link
               key={item.key}
-              className="rounded-2xl border border-[#E9DED2] bg-white p-6 shadow-sm"
+              href={item.href}
+              className="group block rounded-2xl border border-[#E9DED2] bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-[#C8A98E] hover:shadow-md"
             >
               <div className="flex items-center justify-between">
-                <div className="rounded-xl bg-[#F5EBDD] p-3 text-[#80583D]">
+                <div className="rounded-xl bg-[#F5EBDD] p-3 text-[#80583D] transition-colors group-hover:bg-[#80583D] group-hover:text-white">
                   <Icon size={23} />
                 </div>
+
                 <span className="text-3xl font-bold text-[#38291F]">
                   {overview?.[item.key] ?? 0}
                 </span>
               </div>
-              <p className="mt-5 font-medium text-[#806F62]">{item.title}</p>
-            </div>
+
+              <div className="mt-5 flex items-center justify-between">
+                <p className="font-medium text-[#806F62]">{item.title}</p>
+              </div>
+            </Link>
           );
         })}
       </div>

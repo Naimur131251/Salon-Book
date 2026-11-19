@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSession } from "@/lib/auth-client";
 import { toast } from "sonner";
+import { useMemo } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   CalendarDays,
   Clock,
@@ -34,6 +36,27 @@ export default function MyAppointmentsPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState("");
+
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const activeFilter = searchParams.get("status") || "all";
+
+  const [sortBy, setSortBy] = useState("newest");
+
+  const handleFilterChange = (value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    if (value === "all") {
+      params.delete("status");
+    } else {
+      params.set("status", value);
+    }
+
+    const query = params.toString();
+    router.push(query ? `${pathname}?${query}` : pathname);
+  };
 
   const customerId = session?.user?.id;
 
@@ -123,6 +146,42 @@ export default function MyAppointmentsPage() {
     }
   };
 
+  const filteredAppointments = useMemo(() => {
+    let result = [...appointments];
+
+    // Filtering
+    if (activeFilter === "paid") {
+      result = result.filter((item) => item.paymentStatus === "paid");
+    } else if (activeFilter !== "all") {
+      result = result.filter((item) => item.status === activeFilter);
+    }
+
+    // Sorting
+    result.sort((a, b) => {
+      const dateA = new Date(a.appointmentDate).getTime();
+      const dateB = new Date(b.appointmentDate).getTime();
+
+      switch (sortBy) {
+        case "oldest":
+          return dateA - dateB;
+
+        case "newest":
+          return dateB - dateA;
+
+        case "date-asc":
+          return dateA - dateB;
+
+        case "date-desc":
+          return dateB - dateA;
+
+        default:
+          return dateB - dateA;
+      }
+    });
+
+    return result;
+  }, [appointments, activeFilter, sortBy]);
+
   if (isPending || (loading && customerId)) {
     return (
       <div className="flex min-h-80 items-center justify-center">
@@ -144,9 +203,48 @@ export default function MyAppointmentsPage() {
         </p>
       </div>
 
+      <div className="flex flex-col gap-4 rounded-2xl border border-[#E9DED2] bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+        {/* Filter */}
+        <div className="w-full sm:w-56">
+          <label className="mb-2 block text-sm font-semibold text-[#38291F]">
+            Filter Appointments
+          </label>
+
+          <select
+            value={activeFilter}
+            onChange={(e) => handleFilterChange(e.target.value)}
+            className="w-full rounded-lg border border-[#E9DED2] bg-[#FAF7F2] px-4 py-3 text-sm text-[#38291F] outline-none focus:border-[#80583D]"
+          >
+            <option value="all">All Appointments</option>
+            <option value="pending">Pending</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="cancelled">Cancelled</option>
+            <option value="paid">Paid Appointments</option>
+          </select>
+        </div>
+
+        {/* Sorting */}
+        <div className="w-full sm:w-56">
+          <label className="mb-2 block text-sm font-semibold text-[#38291F]">
+            Sort By
+          </label>
+
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="w-full rounded-lg border border-[#E9DED2] bg-[#FAF7F2] px-4 py-3 text-sm text-[#38291F] outline-none focus:border-[#80583D]"
+          >
+            <option value="newest">Newest First</option>
+            <option value="oldest">Oldest First</option>
+            <option value="date-asc">Appointment Date: Earliest</option>
+            <option value="date-desc">Appointment Date: Latest</option>
+          </select>
+        </div>
+      </div>
+
       <div className="grid gap-5">
-        {appointments.length ? (
-          appointments.map((item) => (
+        {filteredAppointments.length ? (
+          filteredAppointments.map((item) => (
             <div
               key={item._id}
               className="rounded-2xl border border-[#E9DED2] bg-white p-5 shadow-sm sm:p-6"
@@ -242,12 +340,27 @@ export default function MyAppointmentsPage() {
         ) : (
           <div className="rounded-2xl border border-[#E9DED2] bg-white py-16 text-center">
             <CalendarDays className="mx-auto text-[#A47754]" size={40} />
+
             <h3 className="mt-4 text-xl font-bold text-[#38291F]">
-              No Appointments Yet
+              {activeFilter === "all"
+                ? "No Appointments Yet"
+                : "No Matching Appointments"}
             </h3>
+
             <p className="mt-2 text-sm text-[#806F62]">
-              Your salon booking history will appear here.
+              {activeFilter === "all"
+                ? "Your salon booking history will appear here."
+                : `No ${activeFilter} appointments found.`}
             </p>
+
+            {activeFilter !== "all" && (
+              <button
+                onClick={() => handleFilterChange("all")}
+                className="mt-5 rounded-lg bg-[#80583D] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#62432E]"
+              >
+                Clear Filter
+              </button>
+            )}
           </div>
         )}
       </div>
