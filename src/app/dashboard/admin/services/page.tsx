@@ -9,6 +9,7 @@ import {
   Loader2,
   Scissors,
   RefreshCw,
+  Search,
 } from "lucide-react";
 import Image from "next/image";
 
@@ -31,12 +32,16 @@ export default function ManageServicesPage() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("all");
+  const [sort, setSort] = useState("");
 
   // Fetch all services
-  const fetchServices = async () => {
+  const fetchServices = async (showLoading = true) => {
     try {
+      if (showLoading) setLoading(true);
+
       const response = await fetch(`${API_URL}/admin/services`, {
-        // credentials: "include",
         cache: "no-store",
       });
 
@@ -51,18 +56,54 @@ export default function ManageServicesPage() {
     } catch (error) {
       setError(error instanceof Error ? error.message : "Something went wrong");
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   };
 
+  const filteredServices = services
+    .filter((service) => {
+      const matchesSearch =
+        service.serviceName.toLowerCase().includes(search.toLowerCase()) ||
+        (service.description || "")
+          .toLowerCase()
+          .includes(search.toLowerCase());
+
+      const matchesCategory =
+        category === "all" ||
+        service.category.toLowerCase() === category.toLowerCase();
+
+      return matchesSearch && matchesCategory;
+    })
+    .sort((a, b) => {
+      switch (sort) {
+        case "price-low":
+          return a.price - b.price;
+
+        case "price-high":
+          return b.price - a.price;
+
+        case "name-asc":
+          return a.serviceName.localeCompare(b.serviceName);
+
+        case "name-desc":
+          return b.serviceName.localeCompare(a.serviceName);
+
+        default:
+          return 0;
+      }
+    });
+
+  const handleCategoryChange = (newCategory: string) => {
+    setCategory(newCategory);
+  };
+
   const handleRefresh = () => {
-    setLoading(true);
     setError("");
     void fetchServices();
   };
 
   useEffect(() => {
-    void Promise.resolve().then(fetchServices);
+    void Promise.resolve().then(() => fetchServices());
   }, []);
 
   // Toggle service status
@@ -93,7 +134,7 @@ export default function ManageServicesPage() {
       }
 
       setMessage(result.message);
-      await fetchServices();
+      await fetchServices(false);
     } catch (error) {
       setError(
         error instanceof Error ? error.message : "Failed to update status",
@@ -201,9 +242,59 @@ export default function ManageServicesPage() {
         </div>
       </div>
 
+      {/* Search & Filters */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {/* Search */}
+        <div className="relative">
+          <Search
+            size={18}
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9A8778]"
+          />
+
+          <input
+            type="text"
+            placeholder="Search services..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full rounded-xl border border-[#E9DED2] bg-white py-3 pl-11 pr-4 text-sm text-[#38291F] outline-none transition placeholder:text-[#A99A8D] focus:border-[#80583D] focus:ring-2 focus:ring-[#80583D]/10"
+          />
+        </div>
+
+        {/* Category Filter */}
+        <div className="relative">
+          <select
+            value={category}
+            onChange={(e) => handleCategoryChange(e.target.value)}
+            className="w-full appearance-none rounded-xl border border-[#E9DED2] bg-white px-4 py-3 text-sm text-[#38291F] outline-none transition focus:border-[#80583D] focus:ring-2 focus:ring-[#80583D]/10"
+          >
+            <option value="all">All Categories</option>
+            <option value="hair">Hair</option>
+            <option value="skin">Skin</option>
+            <option value="nail">Nail</option>
+            <option value="makeup">Makeup</option>
+          </select>
+        </div>
+
+        {/* Sorting */}
+        <div className="relative sm:col-span-2 lg:col-span-1">
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value)}
+            className="w-full appearance-none rounded-xl border border-[#E9DED2] bg-white px-4 py-3 text-sm text-[#38291F] outline-none transition focus:border-[#80583D] focus:ring-2 focus:ring-[#80583D]/10"
+          >
+            <option value="">Default Sorting</option>
+            <option value="price-low">Price: Low to High</option>
+            <option value="price-high">Price: High to Low</option>
+            <option value="name-asc">Name: A to Z</option>
+            <option value="name-desc">Name: Z to A</option>
+          </select>
+        </div>
+      </div>
+
       {/* Services Table */}
       <div className="overflow-hidden rounded-2xl border border-[#E9DED2] bg-white shadow-sm">
-        <div className="flex items-center justify-between border-b border-[#E9DED2] p-5">
+        {/* Table Header */}
+        <div className="flex items-center justify-between border-b border-[#E9DED2] p-4 sm:p-5">
           <div>
             <h2 className="font-bold text-[#38291F]">All Services</h2>
             <p className="mt-1 text-xs text-[#806F62]">
@@ -225,7 +316,7 @@ export default function ManageServicesPage() {
           <div className="flex min-h-64 items-center justify-center">
             <Loader2 size={32} className="animate-spin text-[#80583D]" />
           </div>
-        ) : services.length === 0 ? (
+        ) : filteredServices.length === 0 ? (
           <div className="flex flex-col items-center justify-center px-5 py-16 text-center">
             <div className="rounded-full bg-[#EDE0D3] p-5 text-[#80583D]">
               <Scissors size={30} />
@@ -247,108 +338,191 @@ export default function ManageServicesPage() {
             </Link>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-212.5 text-left">
-              <thead className="bg-[#FAF7F2] text-xs uppercase text-[#806F62]">
-                <tr>
-                  <th className="px-5 py-4">Service</th>
-                  <th className="px-5 py-4">Category</th>
-                  <th className="px-5 py-4">Price</th>
-                  <th className="px-5 py-4">Duration</th>
-                  <th className="px-5 py-4">Status</th>
-                  <th className="px-5 py-4">Actions</th>
-                </tr>
-              </thead>
+          <>
+            {/* Mobile Card Layout */}
+            <div className="divide-y divide-[#E9DED2] md:hidden">
+              {filteredServices.map((service) => (
+                <div key={service._id} className="space-y-4 p-4">
+                  {/* Service Info */}
+                  <div className="flex items-start gap-3">
+                    <Image
+                      src={service.image}
+                      alt={service.serviceName}
+                      width={500}
+                      height={500}
+                      className="h-16 w-16 shrink-0 rounded-xl object-cover"
+                    />
 
-              <tbody className="divide-y divide-[#E9DED2]">
-                {services.map((service) => (
-                  <tr
-                    key={service._id}
-                    className="transition hover:bg-[#FAF7F2]/70"
-                  >
-                    {/* Service */}
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-3">
-                        <Image
-                          src={service.image}
-                          alt={service.serviceName}
-                          className="h-12 w-12 rounded-xl object-cover"
-                          width={500}
-                          height={500}
-                        />
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-semibold text-[#38291F]">
+                        {service.serviceName}
+                      </h3>
 
-                        <div>
-                          <p className="font-semibold text-[#38291F]">
-                            {service.serviceName}
-                          </p>
-                          <p className="mt-1 line-clamp-1 max-w-48 text-xs text-[#9A8778]">
-                            {service.description}
-                          </p>
-                        </div>
-                      </div>
-                    </td>
+                      <p className="mt-1 line-clamp-2 text-xs text-[#9A8778]">
+                        {service.description}
+                      </p>
 
-                    {/* Category */}
-                    <td className="px-5 py-4">
-                      <span className="rounded-full bg-[#EDE0D3] px-3 py-1.5 text-xs font-medium text-[#80583D]">
+                      <span className="mt-2 inline-block rounded-full bg-[#EDE0D3] px-3 py-1 text-xs font-medium text-[#80583D]">
                         {service.category}
                       </span>
-                    </td>
+                    </div>
+                  </div>
 
-                    {/* Price */}
-                    <td className="px-5 py-4 font-semibold text-[#38291F]">
-                      ৳{service.price.toLocaleString("en-BD")}
-                    </td>
+                  {/* Price & Duration */}
+                  <div className="grid grid-cols-2 gap-3 rounded-xl bg-[#FAF7F2] p-3">
+                    <div>
+                      <p className="text-xs text-[#806F62]">Price</p>
+                      <p className="mt-1 font-bold text-[#38291F]">
+                        ৳{service.price.toLocaleString("en-BD")}
+                      </p>
+                    </div>
 
-                    {/* Duration */}
-                    <td className="px-5 py-4 text-sm text-[#806F62]">
-                      {service.duration} min
-                    </td>
+                    <div>
+                      <p className="text-xs text-[#806F62]">Duration</p>
+                      <p className="mt-1 font-semibold text-[#38291F]">
+                        {service.duration} min
+                      </p>
+                    </div>
+                  </div>
 
-                    {/* Status */}
-                    <td className="px-5 py-4">
-                      <button
-                        onClick={() => handleStatusChange(service)}
-                        disabled={updatingId === service._id}
-                        className={`rounded-full px-3 py-1.5 text-xs font-semibold transition disabled:opacity-50 ${
-                          service.status === "active"
-                            ? "bg-green-50 text-green-700 hover:bg-green-100"
-                            : "bg-red-50 text-red-600 hover:bg-red-100"
-                        }`}
+                  {/* Status & Actions */}
+                  <div className="flex items-center justify-between gap-3">
+                    <button
+                      onClick={() => handleStatusChange(service)}
+                      disabled={updatingId === service._id}
+                      className={`rounded-full px-3 py-2 text-xs font-semibold transition disabled:opacity-50 ${
+                        service.status === "active"
+                          ? "bg-green-50 text-green-700 hover:bg-green-100"
+                          : "bg-red-50 text-red-600 hover:bg-red-100"
+                      }`}
+                    >
+                      {updatingId === service._id
+                        ? "Updating..."
+                        : service.status === "active"
+                          ? "Active"
+                          : "Inactive"}
+                    </button>
+
+                    <div className="flex items-center gap-2">
+                      <Link
+                        href={`/dashboard/admin/services/add?id=${service._id}`}
+                        title="Edit Service"
+                        className="rounded-lg bg-[#EDE0D3] p-2.5 text-[#80583D] transition hover:bg-[#E3D1BD]"
                       >
-                        {updatingId === service._id
-                          ? "Updating..."
-                          : service.status === "active"
-                            ? "Active"
-                            : "Inactive"}
+                        <Pencil size={17} />
+                      </Link>
+
+                      <button
+                        onClick={() => handleDelete(service._id)}
+                        title="Delete Service"
+                        className="rounded-lg bg-red-50 p-2.5 text-red-600 transition hover:bg-red-100"
+                      >
+                        <Trash2 size={17} />
                       </button>
-                    </td>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
 
-                    {/* Actions */}
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-2">
-                        <Link
-                          href={`/dashboard/admin/services/add?id=${service._id}`}
-                          title="Edit Service"
-                          className="rounded-lg bg-[#EDE0D3] p-2 text-[#80583D] transition hover:bg-[#E3D1BD]"
-                        >
-                          <Pencil size={17} />
-                        </Link>
-
-                        <button
-                          onClick={() => handleDelete(service._id)}
-                          title="Delete Service"
-                          className="rounded-lg bg-red-50 p-2 text-red-600 transition hover:bg-red-100"
-                        >
-                          <Trash2 size={17} />
-                        </button>
-                      </div>
-                    </td>
+            {/* Tablet & Desktop Table */}
+            <div className="hidden overflow-x-auto md:block">
+              <table className="w-full min-w-212.5 text-left">
+                <thead className="bg-[#FAF7F2] text-xs uppercase text-[#806F62]">
+                  <tr>
+                    <th className="px-5 py-4">Service</th>
+                    <th className="px-5 py-4">Category</th>
+                    <th className="px-5 py-4">Price</th>
+                    <th className="px-5 py-4">Duration</th>
+                    <th className="px-5 py-4">Status</th>
+                    <th className="px-5 py-4">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+
+                <tbody className="divide-y divide-[#E9DED2]">
+                  {filteredServices.map((service) => (
+                    <tr
+                      key={service._id}
+                      className="transition hover:bg-[#FAF7F2]/70"
+                    >
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-3">
+                          <Image
+                            src={service.image}
+                            alt={service.serviceName}
+                            className="h-12 w-12 rounded-xl object-cover"
+                            width={500}
+                            height={500}
+                          />
+
+                          <div>
+                            <p className="font-semibold text-[#38291F]">
+                              {service.serviceName}
+                            </p>
+                            <p className="mt-1 line-clamp-1 max-w-48 text-xs text-[#9A8778]">
+                              {service.description}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+
+                      <td className="px-5 py-4">
+                        <span className="rounded-full bg-[#EDE0D3] px-3 py-1.5 text-xs font-medium text-[#80583D]">
+                          {service.category}
+                        </span>
+                      </td>
+
+                      <td className="px-5 py-4 font-semibold text-[#38291F]">
+                        ৳{service.price.toLocaleString("en-BD")}
+                      </td>
+
+                      <td className="px-5 py-4 text-sm text-[#806F62]">
+                        {service.duration} min
+                      </td>
+
+                      <td className="px-5 py-4">
+                        <button
+                          onClick={() => handleStatusChange(service)}
+                          disabled={updatingId === service._id}
+                          className={`rounded-full px-3 py-1.5 text-xs font-semibold transition disabled:opacity-50 ${
+                            service.status === "active"
+                              ? "bg-green-50 text-green-700 hover:bg-green-100"
+                              : "bg-red-50 text-red-600 hover:bg-red-100"
+                          }`}
+                        >
+                          {updatingId === service._id
+                            ? "Updating..."
+                            : service.status === "active"
+                              ? "Active"
+                              : "Inactive"}
+                        </button>
+                      </td>
+
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-2">
+                          <Link
+                            href={`/dashboard/admin/services/add?id=${service._id}`}
+                            title="Edit Service"
+                            className="rounded-lg bg-[#EDE0D3] p-2 text-[#80583D] transition hover:bg-[#E3D1BD]"
+                          >
+                            <Pencil size={17} />
+                          </Link>
+
+                          <button
+                            onClick={() => handleDelete(service._id)}
+                            title="Delete Service"
+                            className="rounded-lg bg-red-50 p-2 text-red-600 transition hover:bg-red-100"
+                          >
+                            <Trash2 size={17} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
     </div>

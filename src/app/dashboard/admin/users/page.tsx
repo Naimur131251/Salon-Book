@@ -3,6 +3,16 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Search,
   Eye,
   Ban,
@@ -32,6 +42,7 @@ export default function ManageUsersPage() {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<IUser | null>(null);
   const [updating, setUpdating] = useState<string | null>(null);
+  const [userToUpdate, setUserToUpdate] = useState<IUser | null>(null);
 
   const fetchUsers = async () => {
     try {
@@ -60,15 +71,11 @@ export default function ManageUsersPage() {
     void Promise.resolve().then(fetchUsers);
   }, []);
 
-  const handleBlock = async (user: IUser) => {
-    const newStatus = !user.isBlocked;
+  const handleBlock = async () => {
+    if (!userToUpdate) return;
 
-    if (
-      !window.confirm(
-        `Are you sure you want to ${newStatus ? "block" : "unblock"} ${user.name}?`,
-      )
-    )
-      return;
+    const user = userToUpdate;
+    const newStatus = !user.isBlocked;
 
     try {
       setUpdating(user._id);
@@ -76,7 +83,6 @@ export default function ManageUsersPage() {
       const res = await fetch(`${API_URL}/admin/users/${user._id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        // credentials: "include",
         body: JSON.stringify({ isBlocked: newStatus }),
       });
 
@@ -85,11 +91,18 @@ export default function ManageUsersPage() {
       if (!res.ok) throw new Error(result.message);
 
       toast.success(result.message || "User status updated");
-      await fetchUsers();
+
+      setUsers((prev) =>
+        prev.map((u) =>
+          u._id === user._id ? { ...u, isBlocked: newStatus } : u,
+        ),
+      );
 
       if (selected?._id === user._id) {
         setSelected({ ...user, isBlocked: newStatus });
       }
+
+      setUserToUpdate(null);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Update failed");
     } finally {
@@ -166,46 +179,30 @@ export default function ManageUsersPage() {
             No customers found.
           </p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-187.5 text-left">
-              <thead className="bg-[#FAF7F2] text-xs uppercase text-[#806F62]">
-                <tr>
-                  <th className="px-9 py-4">Customer</th>
-                  <th className="px-5 py-4">Phone</th>
-                  <th className="px-6 py-4">Status</th>
-                  <th className="px-5 py-4">Joined</th>
-                  <th className="px-6 py-4">Actions</th>
-                </tr>
-              </thead>
+          <>
+            {/* Mobile Card Layout */}
+            <div className="divide-y divide-[#E9DED2] md:hidden">
+              {filteredUsers.map((user) => (
+                <div key={user._id} className="space-y-4 p-4">
+                  {/* Customer Info */}
+                  <div className="flex items-center gap-3">
+                    <Image
+                      src={user.image || "/avatar.png"}
+                      alt={user.name}
+                      width={500}
+                      height={500}
+                      className="h-14 w-14 shrink-0 rounded-full object-cover"
+                    />
 
-              <tbody className="divide-y divide-[#E9DED2]">
-                {filteredUsers.map((user) => (
-                  <tr key={user._id}>
-                    <td className="px-9 py-4">
-                      <div className="flex items-center gap-3">
-                        <Image
-                          src={user.image || "/avatar.png"}
-                          alt={user.name}
-                          className="h-10 w-10 rounded-full object-cover"
-                          width={500}
-                          height={500}
-                        />
-                        <div>
-                          <p className="font-semibold text-[#38291F]">
-                            {user.name}
-                          </p>
-                          <p className="text-xs text-[#806F62]">{user.email}</p>
-                        </div>
-                      </div>
-                    </td>
-
-                    <td className="px-5 py-4 text-sm text-[#806F62]">
-                      {user.phone || "Not provided"}
-                    </td>
-
-                    <td className="px-5 py-4">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="truncate font-semibold text-[#38291F]">
+                        {user.name}
+                      </h3>
+                      <p className="break-all text-xs text-[#806F62]">
+                        {user.email}
+                      </p>
                       <span
-                        className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
+                        className={`mt-2 inline-block rounded-full px-3 py-1 text-xs font-semibold ${
                           user.isBlocked
                             ? "bg-red-50 text-red-600"
                             : "bg-green-50 text-green-700"
@@ -213,49 +210,167 @@ export default function ManageUsersPage() {
                       >
                         {user.isBlocked ? "Blocked" : "Active"}
                       </span>
-                    </td>
+                    </div>
+                  </div>
 
-                    <td className="px-5 py-4 text-sm text-[#806F62]">
-                      {user.createdAt
-                        ? new Date(user.createdAt).toLocaleDateString()
-                        : "—"}
-                    </td>
+                  {/* Customer Details */}
+                  <div className="grid grid-cols-2 gap-3 rounded-xl bg-[#FAF7F2] p-3">
+                    <div className="min-w-0">
+                      <p className="text-xs text-[#806F62]">Phone</p>
+                      <p className="mt-1 wrap-break-words text-sm font-medium text-[#38291F]">
+                        {user.phone || "Not provided"}
+                      </p>
+                    </div>
 
-                    <td className="px-5 py-4">
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => setSelected(user)}
-                          className="rounded-lg bg-[#EDE0D3] p-2 text-[#80583D]"
-                          title="View details"
-                        >
-                          <Eye size={17} />
-                        </button>
+                    <div>
+                      <p className="text-xs text-[#806F62]">Joined</p>
+                      <p className="mt-1 text-sm font-medium text-[#38291F]">
+                        {user.createdAt
+                          ? new Date(user.createdAt).toLocaleDateString()
+                          : "—"}
+                      </p>
+                    </div>
+                  </div>
 
-                        <button
-                          disabled={updating === user._id}
-                          onClick={() => handleBlock(user)}
-                          className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all disabled:cursor-not-allowed disabled:opacity-50 ${
+                  {/* Actions */}
+                  <div className="flex items-center justify-between gap-3">
+                    <button
+                      onClick={() => setSelected(user)}
+                      className="flex items-center gap-2 rounded-lg bg-[#EDE0D3] px-3 py-2.5 text-sm font-semibold text-[#80583D] transition hover:bg-[#E3D1BD]"
+                      title="View Details"
+                    >
+                      <Eye size={16} />
+                      View Details
+                    </button>
+
+                    <button
+                      disabled={updating === user._id}
+                      onClick={() => setUserToUpdate(user)}
+                      className={`inline-flex items-center justify-center gap-1.5 rounded-lg border px-3 py-2.5 text-xs font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-50 ${
+                        user.isBlocked
+                          ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white"
+                          : "border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white"
+                      }`}
+                    >
+                      {updating === user._id ? (
+                        <Loader2 size={14} className="animate-spin" />
+                      ) : user.isBlocked ? (
+                        <CheckCircle size={14} />
+                      ) : (
+                        <Ban size={14} />
+                      )}
+
+                      {user.isBlocked ? "Unblock" : "Block"}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Tablet & Desktop Table */}
+            <div className="hidden overflow-x-auto md:block">
+              <table className="w-full min-w-187.5 text-left">
+                <thead className="bg-[#FAF7F2] text-xs uppercase text-[#806F62]">
+                  <tr>
+                    <th className="px-9 py-4">Customer</th>
+                    <th className="px-5 py-4">Phone</th>
+                    <th className="px-6 py-4">Status</th>
+                    <th className="px-5 py-4">Joined</th>
+                    <th className="px-6 py-4">Actions</th>
+                  </tr>
+                </thead>
+
+                <tbody className="divide-y divide-[#E9DED2]">
+                  {filteredUsers.map((user) => (
+                    <tr
+                      key={user._id}
+                      className="transition hover:bg-[#FAF7F2]/70"
+                    >
+                      {/* Customer */}
+                      <td className="px-9 py-4">
+                        <div className="flex items-center gap-3">
+                          <Image
+                            src={user.image || "/avatar.png"}
+                            alt={user.name}
+                            className="h-10 w-10 shrink-0 rounded-full object-cover"
+                            width={500}
+                            height={500}
+                          />
+
+                          <div className="min-w-0">
+                            <p className="font-semibold text-[#38291F]">
+                              {user.name}
+                            </p>
+                            <p className="text-xs text-[#806F62]">
+                              {user.email}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Phone */}
+                      <td className="px-5 py-4 text-sm text-[#806F62]">
+                        {user.phone || "Not provided"}
+                      </td>
+
+                      {/* Status */}
+                      <td className="px-5 py-4">
+                        <span
+                          className={`whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold ${
                             user.isBlocked
-                              ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white"
-                              : "border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white"
+                              ? "bg-red-50 text-red-600"
+                              : "bg-green-50 text-green-700"
                           }`}
                         >
-                          {updating === user._id ? (
-                            <Loader2 size={14} className="animate-spin" />
-                          ) : user.isBlocked ? (
-                            <CheckCircle size={14} />
-                          ) : (
-                            <Ban size={14} />
-                          )}
-                          <span>{user.isBlocked ? "Unblock" : "Block"}</span>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                          {user.isBlocked ? "Blocked" : "Active"}
+                        </span>
+                      </td>
+
+                      {/* Joined */}
+                      <td className="whitespace-nowrap px-5 py-4 text-sm text-[#806F62]">
+                        {user.createdAt
+                          ? new Date(user.createdAt).toLocaleDateString()
+                          : "—"}
+                      </td>
+
+                      {/* Actions */}
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setSelected(user)}
+                            className="rounded-lg bg-[#EDE0D3] p-2 text-[#80583D] transition hover:bg-[#E3D1BD]"
+                            title="View Details"
+                          >
+                            <Eye size={17} />
+                          </button>
+
+                          <button
+                            disabled={updating === user._id}
+                            onClick={() => setUserToUpdate(user)}
+                            className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all disabled:cursor-not-allowed disabled:opacity-50 ${
+                              user.isBlocked
+                                ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white"
+                                : "border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white"
+                            }`}
+                          >
+                            {updating === user._id ? (
+                              <Loader2 size={14} className="animate-spin" />
+                            ) : user.isBlocked ? (
+                              <CheckCircle size={14} />
+                            ) : (
+                              <Ban size={14} />
+                            )}
+
+                            <span>{user.isBlocked ? "Unblock" : "Block"}</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 
@@ -306,6 +421,77 @@ export default function ManageUsersPage() {
           </div>
         </div>
       )}
+
+      {/* Block / Unblock Confirmation Dialog */}
+      <AlertDialog
+        open={!!userToUpdate}
+        onOpenChange={(open) => {
+          if (!open && !updating) setUserToUpdate(null);
+        }}
+      >
+        <AlertDialogContent className="max-w-[calc(100%-2rem)] rounded-2xl border-[#E9DED2] bg-white sm:max-w-md">
+          <AlertDialogHeader>
+            <div
+              className={`mb-2 flex h-12 w-12 items-center justify-center rounded-full ${
+                userToUpdate?.isBlocked
+                  ? "bg-green-50 text-green-600"
+                  : "bg-red-50 text-red-600"
+              }`}
+            >
+              {userToUpdate?.isBlocked ? (
+                <CheckCircle size={24} />
+              ) : (
+                <Ban size={24} />
+              )}
+            </div>
+
+            <AlertDialogTitle className="text-xl font-bold text-[#38291F]">
+              {userToUpdate?.isBlocked
+                ? "Unblock Customer?"
+                : "Block Customer?"}
+            </AlertDialogTitle>
+
+            <AlertDialogDescription className="text-sm leading-relaxed text-[#806F62]">
+              Are you sure you want to{" "}
+              <span className="font-semibold text-[#38291F]">
+                {userToUpdate?.isBlocked ? "unblock" : "block"}{" "}
+                {userToUpdate?.name}
+              </span>
+              ?
+              {userToUpdate?.isBlocked
+                ? " This customer will be able to access their account again."
+                : " This customer may lose access to their account."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <AlertDialogFooter className="mt-4 flex-row justify-end gap-2">
+            <AlertDialogCancel
+              disabled={!!updating}
+              className="mt-0 border-[#E9DED2] text-[#806F62]"
+            >
+              Cancel
+            </AlertDialogCancel>
+
+            <AlertDialogAction
+              disabled={!!updating}
+              onClick={(e) => {
+                e.preventDefault();
+                void handleBlock();
+              }}
+              className={`${
+                userToUpdate?.isBlocked
+                  ? "bg-green-600 hover:bg-green-700"
+                  : "bg-red-600 hover:bg-red-700"
+              } text-white`}
+            >
+              {updating ? (
+                <Loader2 size={16} className="mr-2 animate-spin" />
+              ) : null}
+              {userToUpdate?.isBlocked ? "Unblock" : "Block"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

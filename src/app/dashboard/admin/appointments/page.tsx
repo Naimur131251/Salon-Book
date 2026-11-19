@@ -1,16 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation"; // ১. useSearchParams ইম্পোর্ট করা হয়েছে
 import { toast } from "sonner";
-import {
-  //   CalendarDays,
-  //   Clock,
-  Eye,
-  Check,
-  X,
-  Loader2,
-  RefreshCw,
-} from "lucide-react";
+import { Eye, Check, X, Loader2, RefreshCw } from "lucide-react";
 
 const API_URL = process.env.NEXT_PUBLIC_SERVER_BASE_URL;
 
@@ -35,12 +28,29 @@ interface IAppointment {
   createdAt: string;
 }
 
-export default function ManageAppointmentsPage() {
+// মূল কন্টেন্ট আলাদা কম্পোনেন্টে রাখা হয়েছে যাতে Suspense ব্যবহার করা যায়
+function AppointmentsContent() {
+  const searchParams = useSearchParams();
+  const statusFromUrl = searchParams.get("status"); // ২. URL থেকে status নেওয়া হলো
+
   const [appointments, setAppointments] = useState<IAppointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<IAppointment | null>(null);
   const [updating, setUpdating] = useState<string | null>(null);
-  const [filter, setFilter] = useState("all");
+
+  const [manualFilter, setManualFilter] = useState<{
+    statusFromUrl: string | null;
+    filter: string;
+  } | null>(null);
+  const isValidStatus =
+    statusFromUrl &&
+    ["pending", "confirmed", "cancelled"].includes(statusFromUrl);
+  const filter =
+    manualFilter?.statusFromUrl === statusFromUrl
+      ? manualFilter.filter
+      : isValidStatus
+        ? statusFromUrl
+        : "all";
 
   const fetchAppointments = async () => {
     try {
@@ -103,7 +113,7 @@ export default function ManageAppointmentsPage() {
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          //   credentials: "include",
+          // credentials: "include",
           body: JSON.stringify({ status }),
         },
       );
@@ -187,7 +197,7 @@ export default function ManageAppointmentsPage() {
         {["all", "pending", "confirmed", "cancelled"].map((status) => (
           <button
             key={status}
-            onClick={() => setFilter(status)}
+            onClick={() => setManualFilter({ statusFromUrl, filter: status })}
             className={`rounded-full px-4 py-2 text-sm font-semibold capitalize ${
               filter === status
                 ? "bg-[#80583D] text-white"
@@ -209,53 +219,73 @@ export default function ManageAppointmentsPage() {
             No appointments found.
           </p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-237.5 text-left">
-              <thead className="bg-[#FAF7F2] text-xs uppercase text-[#806F62]">
-                <tr>
-                  <th className="px-5 py-4">Customer</th>
-                  <th className="px-5 py-4">Service</th>
-                  <th className="px-5 py-4">Date & Time</th>
-                  <th className="px-5 py-4">Price</th>
-                  <th className="px-5 py-4">Payment</th>
-                  <th className="px-5 py-4">Status</th>
-                  <th className="px-5 py-4">Action</th>
-                </tr>
-              </thead>
-
-              <tbody className="divide-y divide-[#E9DED2]">
-                {filteredAppointments.map((item) => (
-                  <tr key={item._id}>
-                    <td className="px-5 py-4">
+          <>
+            {/* Mobile Cards */}
+            <div className="space-y-4 p-4 md:hidden">
+              {filteredAppointments.map((item) => (
+                <div
+                  key={item._id}
+                  className="space-y-4 rounded-xl border border-[#E9DED2] bg-[#FFFEFC] p-4"
+                >
+                  {/* Customer */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
                       <p className="font-semibold text-[#38291F]">
-                        {item.customerId?.name}
+                        {item.customerId?.name || "Unknown Customer"}
                       </p>
-                      <p className="text-xs text-[#806F62]">
+                      <p className="break-all text-xs text-[#806F62]">
                         {item.customerId?.email}
                       </p>
-                    </td>
+                    </div>
 
-                    <td className="px-5 py-4">
-                      <p className="font-medium text-[#38291F]">
-                        {item.serviceId?.serviceName}
-                      </p>
-                      <p className="text-xs text-[#806F62]">
-                        {item.serviceId?.category}
-                      </p>
-                    </td>
+                    <span
+                      className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold capitalize ${statusStyle(item.status)}`}
+                    >
+                      {item.status}
+                    </span>
+                  </div>
 
-                    <td className="px-5 py-4 text-sm text-[#806F62]">
-                      <p>
+                  <div className="h-px bg-[#E9DED2]" />
+
+                  {/* Service */}
+                  <div>
+                    <p className="text-xs text-[#A47754]">Service</p>
+                    <p className="mt-1 font-semibold text-[#38291F]">
+                      {item.serviceId?.serviceName || "N/A"}
+                    </p>
+                    <p className="text-xs text-[#806F62]">
+                      {item.serviceId?.category}
+                    </p>
+                  </div>
+
+                  {/* Date & Time */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="text-xs text-[#A47754]">Date</p>
+                      <p className="mt-1 text-sm font-medium text-[#38291F]">
                         {new Date(item.appointmentDate).toLocaleDateString()}
                       </p>
-                      <p>{item.timeSlot}</p>
-                    </td>
+                    </div>
 
-                    <td className="px-5 py-4 font-semibold text-[#80583D]">
-                      ৳{item.servicePrice}
-                    </td>
+                    <div>
+                      <p className="text-xs text-[#A47754]">Time</p>
+                      <p className="mt-1 text-sm font-medium text-[#38291F]">
+                        {item.timeSlot}
+                      </p>
+                    </div>
+                  </div>
 
-                    <td className="px-5 py-4">
+                  {/* Price & Payment */}
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs text-[#A47754]">Price</p>
+                      <p className="mt-1 font-bold text-[#80583D]">
+                        ৳{item.servicePrice}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="mb-1 text-xs text-[#A47754]">Payment</p>
                       <span
                         className={`rounded-full px-3 py-1 text-xs font-semibold ${
                           item.paymentStatus === "paid"
@@ -265,54 +295,156 @@ export default function ManageAppointmentsPage() {
                       >
                         {item.paymentStatus}
                       </span>
-                    </td>
+                    </div>
+                  </div>
 
-                    <td className="px-5 py-4">
-                      <span
-                        className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${statusStyle(item.status)}`}
-                      >
-                        {item.status}
-                      </span>
-                    </td>
+                  <div className="h-px bg-[#E9DED2]" />
 
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-2">
+                  {/* Actions */}
+                  <div className="flex items-center justify-between gap-2">
+                    <button
+                      onClick={() => setSelected(item)}
+                      title="View Details"
+                      className="flex items-center gap-2 rounded-lg bg-[#EDE0D3] px-3 py-2 text-sm font-semibold text-[#80583D]"
+                    >
+                      <Eye size={16} />
+                      Details
+                    </button>
+
+                    <div className="flex items-center gap-2">
+                      {item.status === "pending" && (
                         <button
-                          onClick={() => setSelected(item)}
-                          title="View Details"
-                          className="rounded-lg bg-[#EDE0D3] p-2 text-[#80583D]"
+                          disabled={updating === item._id}
+                          onClick={() => updateStatus(item, "confirmed")}
+                          title="Confirm"
+                          className="rounded-lg bg-green-50 p-2 text-green-700 disabled:opacity-50"
                         >
-                          <Eye size={17} />
+                          <Check size={17} />
                         </button>
+                      )}
 
-                        {item.status === "pending" && (
-                          <button
-                            disabled={updating === item._id}
-                            onClick={() => updateStatus(item, "confirmed")}
-                            title="Confirm"
-                            className="rounded-lg bg-green-50 p-2 text-green-700 disabled:opacity-50"
-                          >
-                            <Check size={17} />
-                          </button>
-                        )}
+                      {["pending", "confirmed"].includes(item.status) && (
+                        <button
+                          disabled={updating === item._id}
+                          onClick={() => updateStatus(item, "cancelled")}
+                          title="Cancel"
+                          className="rounded-lg bg-red-50 p-2 text-red-600 disabled:opacity-50"
+                        >
+                          <X size={17} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
 
-                        {["pending", "confirmed"].includes(item.status) && (
-                          <button
-                            disabled={updating === item._id}
-                            onClick={() => updateStatus(item, "cancelled")}
-                            title="Cancel"
-                            className="rounded-lg bg-red-50 p-2 text-red-600 disabled:opacity-50"
-                          >
-                            <X size={17} />
-                          </button>
-                        )}
-                      </div>
-                    </td>
+            {/* Tablet & Desktop Table */}
+            <div className="hidden overflow-x-auto md:block">
+              <table className="w-full min-w-237.5 text-left">
+                <thead className="bg-[#FAF7F2] text-xs uppercase text-[#806F62]">
+                  <tr>
+                    <th className="px-5 py-4">Customer</th>
+                    <th className="px-5 py-4">Service</th>
+                    <th className="px-5 py-4">Date & Time</th>
+                    <th className="px-5 py-4">Price</th>
+                    <th className="px-5 py-4">Payment</th>
+                    <th className="px-5 py-4">Status</th>
+                    <th className="px-5 py-4">Action</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+
+                <tbody className="divide-y divide-[#E9DED2]">
+                  {filteredAppointments.map((item) => (
+                    <tr key={item._id}>
+                      <td className="px-5 py-4">
+                        <p className="font-semibold text-[#38291F]">
+                          {item.customerId?.name}
+                        </p>
+                        <p className="text-xs text-[#806F62]">
+                          {item.customerId?.email}
+                        </p>
+                      </td>
+
+                      <td className="px-5 py-4">
+                        <p className="font-medium text-[#38291F]">
+                          {item.serviceId?.serviceName}
+                        </p>
+                        <p className="text-xs text-[#806F62]">
+                          {item.serviceId?.category}
+                        </p>
+                      </td>
+
+                      <td className="px-5 py-4 text-sm text-[#806F62]">
+                        <p>
+                          {new Date(item.appointmentDate).toLocaleDateString()}
+                        </p>
+                        <p>{item.timeSlot}</p>
+                      </td>
+
+                      <td className="px-5 py-4 font-semibold text-[#80583D]">
+                        ৳{item.servicePrice}
+                      </td>
+
+                      <td className="px-5 py-4">
+                        <span
+                          className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                            item.paymentStatus === "paid"
+                              ? "bg-green-50 text-green-700"
+                              : "bg-amber-50 text-amber-700"
+                          }`}
+                        >
+                          {item.paymentStatus}
+                        </span>
+                      </td>
+
+                      <td className="px-5 py-4">
+                        <span
+                          className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${statusStyle(item.status)}`}
+                        >
+                          {item.status}
+                        </span>
+                      </td>
+
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setSelected(item)}
+                            title="View Details"
+                            className="rounded-lg bg-[#EDE0D3] p-2 text-[#80583D]"
+                          >
+                            <Eye size={17} />
+                          </button>
+
+                          {item.status === "pending" && (
+                            <button
+                              disabled={updating === item._id}
+                              onClick={() => updateStatus(item, "confirmed")}
+                              title="Confirm"
+                              className="rounded-lg bg-green-50 p-2 text-green-700 disabled:opacity-50"
+                            >
+                              <Check size={17} />
+                            </button>
+                          )}
+
+                          {["pending", "confirmed"].includes(item.status) && (
+                            <button
+                              disabled={updating === item._id}
+                              onClick={() => updateStatus(item, "cancelled")}
+                              title="Cancel"
+                              className="rounded-lg bg-red-50 p-2 text-red-600 disabled:opacity-50"
+                            >
+                              <X size={17} />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 
@@ -387,5 +519,19 @@ export default function ManageAppointmentsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function ManageAppointmentsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <Loader2 className="animate-spin text-[#80583D]" size={35} />
+        </div>
+      }
+    >
+      <AppointmentsContent />
+    </Suspense>
   );
 }

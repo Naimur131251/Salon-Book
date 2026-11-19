@@ -104,7 +104,7 @@ export function ServicesContent() {
   }, [search, category, sort]);
 
   return (
-    <main className="min-h-screen bg-[#FAF7F2] px-4 py-16 md:px-8 mt-7">
+    <main className="min-h-screen bg-[#FAF7F2] px-4 py-16 md:px-8">
       <div className="mx-auto max-w-7xl">
         {/* Heading */}
         <div className="mb-10 text-center">
