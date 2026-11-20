@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { authClient } from "@/lib/auth-client"; // আপনার authClient ফাইলের সঠিক পাথ দিন
+import { authClient } from "@/lib/auth-client";
 import {
   Scissors,
   Mail,
@@ -12,11 +12,10 @@ import {
   EyeOff,
   ArrowRight,
   Sparkles,
-  // Chrome,
 } from "lucide-react";
 import { toast } from "sonner";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -28,7 +27,6 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
 
-    // ফর্ম থেকে সরাসরি ডেটা সংগ্রহ করা
     const formData = new FormData(e.currentTarget);
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
@@ -46,8 +44,8 @@ export default function LoginPage() {
       const { error } = await authClient.signIn.email({
         email,
         password,
-        rememberMe: rememberMe || true,
-        callbackURL: callbackUrl, // লগইন সফল হলে যে পেজে যাবে
+        rememberMe,
+        callbackURL: callbackUrl,
       });
 
       if (error) {
@@ -104,8 +102,7 @@ export default function LoginPage() {
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{
-              backgroundImage:
-                "url('https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=1200')",
+              backgroundImage: "url('https://unsplash.com')",
             }}
           />
 
@@ -138,7 +135,6 @@ export default function LoginPage() {
             </p>
           </div>
         </div>
-
         {/* Right Side - Login Form */}
         <div className="flex items-center justify-center px-5 py-12 sm:px-10 lg:px-12 xl:px-16">
           <div className="w-full max-w-md">
@@ -173,7 +169,6 @@ export default function LoginPage() {
               disabled={loading}
               className="flex w-full items-center justify-center gap-3 rounded-xl border border-[#E8DCCB] bg-white py-3.5 text-sm font-semibold text-[#352A24] transition hover:bg-[#F8F3EB] cursor-pointer"
             >
-              {/* <Chrome size={19} className="text-[#765B46]" /> */}
               Continue with Google
             </button>
 
@@ -313,5 +308,19 @@ export default function LoginPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-[#F8F3EB] text-[#352A24]">
+          Loading...
+        </div>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   );
 }

@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation"; // রিডাইরেক্ট করার জন্য
-import { authClient } from "@/lib/auth-client"; // আপনার authClient ফাইলের সঠিক পাথ দিন
+import { Suspense, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { authClient } from "@/lib/auth-client";
 import {
   Scissors,
   User,
@@ -21,13 +21,12 @@ import {
 import Image from "next/image";
 import { toast } from "sonner";
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [imageType, setImageType] = useState<"upload" | "url">("upload");
 
-  // ফর্মের ইনপুট স্টেটগুলো
   const [password, setPassword] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [preview, setPreview] = useState("");
@@ -40,7 +39,7 @@ export default function RegisterPage() {
 
   const passwordRules = [
     {
-      label: "At least 8 characters", // Better Auth ডিফল্টভাবে ৮ অক্ষর চায়
+      label: "At least 8 characters",
       valid: password.length >= 8,
     },
     {
@@ -81,7 +80,6 @@ export default function RegisterPage() {
     setPreview(url);
   };
 
-  // ফর্ম সাবমিট ফাংশন
   const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -91,7 +89,6 @@ export default function RegisterPage() {
     const password = formData.get("password") as string;
     const confirmPassword = formData.get("confirmPassword") as string;
 
-    // পাসওয়ার্ড রুলস চেক
     if (password.length < 8) {
       toast.error("Weak Password", {
         description: "Password must be at least 8 characters long.",
@@ -99,7 +96,6 @@ export default function RegisterPage() {
       return;
     }
 
-    // পাসওয়ার্ড ম্যাচিং চেক
     if (confirmPassword && password !== confirmPassword) {
       toast.error("Password Mismatch", {
         description: "Passwords do not match. Please check again.",
@@ -141,7 +137,6 @@ export default function RegisterPage() {
     }
   };
 
-  // Google Registration
   const handleGoogleRegister = async () => {
     try {
       setLoading(true);
@@ -172,8 +167,7 @@ export default function RegisterPage() {
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{
-              backgroundImage:
-                "url('https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?q=80&w=1200')",
+              backgroundImage: "url('https://unsplash.com')",
             }}
           />
 
@@ -208,7 +202,6 @@ export default function RegisterPage() {
             </p>
           </div>
         </div>
-
         {/* Right Side */}
         <div className="flex items-center justify-center px-5 py-10 sm:px-10 lg:px-12 xl:px-16">
           <div className="w-full max-w-md">
@@ -242,7 +235,6 @@ export default function RegisterPage() {
               disabled={loading}
               className="flex w-full items-center justify-center gap-3 rounded-xl border border-[#E8DCCB] bg-white py-3.5 text-sm font-semibold text-[#352A24] transition hover:bg-[#F8F3EB] cursor-pointer"
             >
-              {/* <Chrome size={19} className="text-[#765B46]" /> */}
               Continue with Google
             </button>
 
@@ -371,6 +363,7 @@ export default function RegisterPage() {
                           className="h-16 w-16 rounded-full object-cover"
                           width={500}
                           height={500}
+                          unoptimized
                         />
                       ) : (
                         <ImagePlus size={28} className="mb-2 text-[#B89B7A]" />
@@ -388,11 +381,10 @@ export default function RegisterPage() {
                       type="url"
                       value={imageUrl}
                       onChange={(e) => handleImageUrl(e.target.value)}
-                      placeholder="https://example.com/image.jpg"
+                      placeholder="https://example.com"
                       className="w-full rounded-lg border border-[#E8DCCB] bg-white px-4 py-3 text-sm text-[#352A24] outline-none placeholder:text-[#B6A99B] focus:border-[#B89B7A]"
                     />
                   )}
-
                   {preview && imageType === "url" && (
                     <div className="mt-3 flex items-center gap-3">
                       <Image
@@ -402,6 +394,7 @@ export default function RegisterPage() {
                         onError={() => setPreview("")}
                         width={500}
                         height={500}
+                        unoptimized
                       />
                       <span className="text-xs text-[#765B46]">
                         Image preview
@@ -556,9 +549,10 @@ export default function RegisterPage() {
               {/* Register Button */}
               <button
                 type="submit"
-                className="group flex w-full items-center justify-center gap-2 rounded-xl bg-[#352A24] py-4 text-sm font-semibold text-white transition hover:bg-[#765B46] cursor-pointer"
+                disabled={loading}
+                className="group flex w-full items-center justify-center gap-2 rounded-xl bg-[#352A24] py-4 text-sm font-semibold text-white transition hover:bg-[#765B46] cursor-pointer disabled:opacity-50"
               >
-                Create Account
+                {loading ? "Creating Account..." : "Create Account"}
                 <ArrowRight
                   size={18}
                   className="transition-transform group-hover:translate-x-1"
@@ -586,5 +580,19 @@ export default function RegisterPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-[#F8F3EB] text-[#352A24]">
+          Loading...
+        </div>
+      }
+    >
+      <RegisterForm />
+    </Suspense>
   );
 }
