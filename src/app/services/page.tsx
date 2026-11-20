@@ -5,6 +5,7 @@ import { Suspense, useEffect, useState } from "react";
 import { Search, Clock, ArrowUpDown, Scissors, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
+import { motion } from "motion/react";
 
 interface IService {
   _id: string;
@@ -18,13 +19,13 @@ interface IService {
 
 const categories = [
   "all",
-  "Hair",
+  "Haircut & Styling",
   "Hair Coloring",
-  "Skin Care",
-  "Nail Care",
+  "Hair Treatment",
+  "Facial & Skincare",
   "Makeup",
-  "Spa",
-  "Grooming",
+  "Manicure & Pedicure",
+  "Spa & Massage",
 ];
 
 const API_URL =
@@ -107,7 +108,12 @@ export function ServicesContent() {
     <main className="min-h-screen bg-[#FAF7F2] px-4 py-16 md:px-8">
       <div className="mx-auto max-w-7xl">
         {/* Heading */}
-        <div className="mb-10 text-center">
+        <motion.div
+          initial={{ opacity: 0, y: 25 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          className="mb-10 text-center"
+        >
           <p className="mb-3 text-sm font-semibold uppercase tracking-[3px] text-[#A47754]">
             SalonBook Services
           </p>
@@ -120,10 +126,15 @@ export function ServicesContent() {
             Explore our professional salon services and choose the perfect
             treatment for yourself.
           </p>
-        </div>
+        </motion.div>
 
         {/* Search and Filters */}
-        <div className="mb-10 grid gap-4 rounded-2xl border border-[#E9DED2] bg-white p-4 shadow-sm md:grid-cols-3">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.15, ease: "easeOut" }}
+          className="mb-10 grid gap-4 rounded-2xl border border-[#E9DED2] bg-white p-4 shadow-sm md:grid-cols-3"
+        >
           {/* Search */}
           <div className="relative">
             <Search
@@ -170,10 +181,14 @@ export function ServicesContent() {
               <option value="high-to-low">Price: High to Low</option>
             </select>
           </div>
-        </div>
-
+        </motion.div>
         {/* Service Count */}
-        <div className="mb-6 flex items-center justify-between">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.25 }}
+          className="mb-6 flex items-center justify-between"
+        >
           <h2 className="text-xl font-semibold text-[#38291F]">
             Available Services
           </h2>
@@ -181,7 +196,7 @@ export function ServicesContent() {
           <span className="text-sm text-[#806F62]">
             {services.length} Services Found
           </span>
-        </div>
+        </motion.div>
 
         {/* Loading */}
         {loading && (
@@ -192,17 +207,29 @@ export function ServicesContent() {
 
         {/* Error */}
         {!loading && error && (
-          <div className="rounded-xl bg-red-50 p-6 text-center text-red-600">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="rounded-xl bg-red-50 p-6 text-center text-red-600"
+          >
             {error}
-          </div>
+          </motion.div>
         )}
 
         {/* Services Grid */}
         {!loading && !error && services.length > 0 && (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {services.map((service) => (
-              <div
+            {services.map((service, index) => (
+              <motion.div
                 key={service._id}
+                initial={{ opacity: 0, y: 40, scale: 0.96 }}
+                whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                viewport={{ once: true, amount: 0.15 }}
+                transition={{
+                  duration: 0.55,
+                  delay: (index % 3) * 0.1,
+                  ease: [0.22, 1, 0.36, 1],
+                }}
                 className="group overflow-hidden rounded-2xl border border-[#E9DED2] bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl"
               >
                 {/* Image */}
@@ -246,22 +273,29 @@ export function ServicesContent() {
                   </div>
 
                   {/* Details Button */}
-                  <Link
-                    href={`/services/${service._id}`}
-                    className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#80583D] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#62432E]"
-                  >
-                    <Scissors size={16} />
-                    View Details
-                  </Link>
+                  <motion.div whileTap={{ scale: 0.98 }}>
+                    <Link
+                      href={`/services/${service._id}`}
+                      className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#80583D] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#62432E]"
+                    >
+                      <Scissors size={16} />
+                      View Details
+                    </Link>
+                  </motion.div>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         )}
 
         {/* Empty State */}
         {!loading && !error && services.length === 0 && (
-          <div className="rounded-2xl border border-dashed border-[#DCCBBB] bg-white px-6 py-16 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="rounded-2xl border border-dashed border-[#DCCBBB] bg-white px-6 py-16 text-center"
+          >
             <Search className="mx-auto mb-4 text-[#A47754]" size={35} />
 
             <h3 className="text-xl font-semibold text-[#38291F]">
@@ -271,7 +305,7 @@ export function ServicesContent() {
             <p className="mt-2 text-sm text-[#806F62]">
               Try another search or select a different category.
             </p>
-          </div>
+          </motion.div>
         )}
       </div>
     </main>
