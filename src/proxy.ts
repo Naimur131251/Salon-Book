@@ -3,20 +3,35 @@ import type { NextRequest } from "next/server";
 import { auth } from "./lib/auth";
 
 export async function proxy(request: NextRequest) {
-  const pathname = request.nextUrl.pathname;
+  const { pathname, search } = request.nextUrl;
+
+  const isServiceDetails =
+    pathname.startsWith("/services/") && pathname !== "/services/";
+  const isDashboard = pathname.startsWith("/dashboard");
+
+  // শুধুমাত্র প্রয়োজনীয় রাউটেই সেশন চেক করবে
+  if (!isServiceDetails && !isDashboard) {
+    return NextResponse.next();
+  }
 
   const session = await auth.api.getSession({
     headers: request.headers,
   });
 
-  // 1. Blocked users cannot access service details
-  const isServiceDetails =
-    pathname.startsWith("/services/") && pathname !== "/services/";
+  const user = session?.user as
+    | (NonNullable<typeof session>["user"] & {
+        role?: string;
+        isBlocked?: boolean;
+      })
+    | undefined;
 
-  if (isServiceDetails && session?.user) {
-    const user = session.user as typeof session.user & {
-      isBlocked?: boolean;
-    };
+  // 1. Service details protection (Login & Blocked check)
+  if (isServiceDetails) {
+    if (!user) {
+      const loginUrl = new URL("/login", request.url);
+      loginUrl.searchParams.set("callbackUrl", pathname + search);
+      return NextResponse.redirect(loginUrl);
+    }
 
     if (user.isBlocked === true) {
       return NextResponse.redirect(new URL("/blocked", request.url));
@@ -24,22 +39,12 @@ export async function proxy(request: NextRequest) {
   }
 
   // 2. Dashboard authentication protection
-  if (pathname.startsWith("/dashboard")) {
-    if (!session?.user) {
+  if (isDashboard) {
+    if (!user) {
       const loginUrl = new URL("/login", request.url);
-
-      loginUrl.searchParams.set(
-        "callbackUrl",
-        pathname + request.nextUrl.search,
-      );
-
+      loginUrl.searchParams.set("callbackUrl", pathname + search);
       return NextResponse.redirect(loginUrl);
     }
-
-    const user = session.user as typeof session.user & {
-      role?: string;
-      isBlocked?: boolean;
-    };
 
     // 3. Blocked user protection
     if (user.isBlocked === true) {
@@ -74,5 +79,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/services/:path*"],
+  matcher: ["/dashboard/:path*", "/services/:path+"],
 };
