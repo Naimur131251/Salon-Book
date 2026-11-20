@@ -36,12 +36,13 @@ function CustomerProfileForm({
     name?: string | null;
     email?: string | null;
     image?: string | null;
+    phone?: string | null;
   };
 }) {
   const [name, setName] = useState(user.name || "");
   const [email] = useState(user.email || "");
   const [image, setImage] = useState(user.image || "");
-  const [phone, setPhone] = useState("");
+  const [phone, setPhone] = useState(user.phone || "");
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -101,7 +102,7 @@ function CustomerProfileForm({
     try {
       setSaving(true);
 
-      const res = await apiFetch("/profile", {
+      const res = await apiFetch("/customer/profile", {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -240,7 +241,7 @@ function CustomerProfileForm({
           <button
             type="submit"
             disabled={saving || uploading}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#80583D] py-3.5 font-semibold text-white transition hover:bg-[#62432E] disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#80583D] py-3.5 font-semibold text-white transition hover:bg-[#62432E] disabled:opacity-50 cursor-pointer"
           >
             {saving ? (
               <Loader2 size={19} className="animate-spin" />

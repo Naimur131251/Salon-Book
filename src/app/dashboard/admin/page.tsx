@@ -36,7 +36,7 @@ const statItems = [
     title: "Active Services",
     icon: Scissors,
     color: "bg-purple-50 text-purple-600",
-    href: "/dashboard/admin/services",
+    href: "/dashboard/admin/services?status=active",
   },
   {
     key: "totalAppointments",
@@ -161,7 +161,7 @@ export default function AdminDashboard() {
                     </p>
                     <h2 className="mt-4 text-3xl font-bold text-[#38291F]">
                       {item.key === "totalSuccessfulPayments"
-                        ? `৳${value.toLocaleString("en-BD")}`
+                        ? `৳ ${value.toLocaleString("en-BD")}`
                         : value.toLocaleString("en-BD")}
                     </h2>
                   </div>

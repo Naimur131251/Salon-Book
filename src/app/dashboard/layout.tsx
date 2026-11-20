@@ -8,7 +8,6 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "../components/DashboardSidebar";
 import { useSession } from "@/lib/auth-client";
 import { Loader2, Home, Sparkles } from "lucide-react";
-import { Toaster } from "@/components/ui/sonner";
 
 export default function DashboardLayout({
   children,
@@ -89,7 +88,6 @@ export default function DashboardLayout({
 
         <div className="p-5 md:p-8">{children}</div>
       </main>
-      <Toaster />
     </SidebarProvider>
   );
 }

@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
   Plus,
   Pencil,
@@ -12,6 +13,17 @@ import {
   Search,
 } from "lucide-react";
 import Image from "next/image";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { apiFetch } from "@/lib/api-fetch";
 
 interface IService {
@@ -25,19 +37,46 @@ interface IService {
   status: "active" | "inactive";
 }
 
-// const API_URL = process.env.NEXT_PUBLIC_SERVER_BASE_URL;
+const CATEGORIES = [
+  "Haircut & Styling",
+  "Hair Coloring",
+  "Hair Treatment",
+  "Facial & Skincare",
+  "Makeup",
+  "Manicure & Pedicure",
+  "Spa & Massage",
+];
 
-export default function ManageServicesPage() {
+function ManageServicesContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const statusParam = searchParams.get("status");
+
+  const statusFilter: "all" | "active" | "inactive" =
+    statusParam === "active" || statusParam === "inactive"
+      ? statusParam
+      : "all";
+
   const [services, setServices] = useState<IService[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<IService | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const [sort, setSort] = useState("");
 
-  // Fetch all services
+  const handleStatusTabChange = (newStatus: "all" | "active" | "inactive") => {
+    if (newStatus === "all") {
+      router.replace("/dashboard/admin/services", { scroll: false });
+    } else {
+      router.replace(`/dashboard/admin/services?status=${newStatus}`, {
+        scroll: false,
+      });
+    }
+  };
+
   const fetchServices = async (showLoading = true) => {
     try {
       if (showLoading) setLoading(true);
@@ -53,9 +92,10 @@ export default function ManageServicesPage() {
       }
 
       setServices(result.data);
-      setError("");
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Something went wrong");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to load services",
+      );
     } finally {
       if (showLoading) setLoading(false);
     }
@@ -73,33 +113,27 @@ export default function ManageServicesPage() {
         category === "all" ||
         service.category.toLowerCase() === category.toLowerCase();
 
-      return matchesSearch && matchesCategory;
+      const matchesStatus =
+        statusFilter === "all" || service.status === statusFilter;
+
+      return matchesSearch && matchesCategory && matchesStatus;
     })
     .sort((a, b) => {
       switch (sort) {
         case "price-low":
           return a.price - b.price;
-
         case "price-high":
           return b.price - a.price;
-
         case "name-asc":
           return a.serviceName.localeCompare(b.serviceName);
-
         case "name-desc":
           return b.serviceName.localeCompare(a.serviceName);
-
         default:
           return 0;
       }
     });
 
-  const handleCategoryChange = (newCategory: string) => {
-    setCategory(newCategory);
-  };
-
   const handleRefresh = () => {
-    setError("");
     void fetchServices();
   };
 
@@ -107,25 +141,20 @@ export default function ManageServicesPage() {
     void Promise.resolve().then(() => fetchServices());
   }, []);
 
-  // Toggle service status
+  // Toggle service status with Sonner Toast
   const handleStatusChange = async (service: IService) => {
     try {
       setUpdatingId(service._id);
-      setMessage("");
-      setError("");
 
       const newStatus = service.status === "active" ? "inactive" : "active";
 
-      const response = await apiFetch(`admin/services/${service._id}/status`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          //   credentials: "include",
-          body: JSON.stringify({ status: newStatus }),
+      const response = await apiFetch(`/admin/services/${service._id}/status`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+        body: JSON.stringify({ status: newStatus }),
+      });
 
       const result = await response.json();
 
@@ -133,10 +162,10 @@ export default function ManageServicesPage() {
         throw new Error(result.message || "Status update failed");
       }
 
-      setMessage(result.message);
+      toast.success(result.message || `Service marked as ${newStatus}`);
       await fetchServices(false);
     } catch (error) {
-      setError(
+      toast.error(
         error instanceof Error ? error.message : "Failed to update status",
       );
     } finally {
@@ -144,21 +173,15 @@ export default function ManageServicesPage() {
     }
   };
 
-  // Delete service
-  const handleDelete = async (id: string) => {
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this service?",
-    );
-
-    if (!confirmed) return;
+  // Delete service confirmed from Shadcn AlertDialog
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
 
     try {
-      setError("");
-      setMessage("");
+      setDeleting(true);
 
-      const response = await apiFetch(`admin/services/${id}`, {
+      const response = await apiFetch(`/admin/services/${deleteTarget._id}`, {
         method: "DELETE",
-        // credentials: "include",
       });
 
       const result = await response.json();
@@ -167,17 +190,19 @@ export default function ManageServicesPage() {
         throw new Error(result.message || "Delete failed");
       }
 
-      setMessage(result.message);
+      toast.success(result.message || "Service deleted successfully");
       setServices((previous) =>
-        previous.filter((service) => service._id !== id),
+        previous.filter((service) => service._id !== deleteTarget._id),
       );
+      setDeleteTarget(null);
     } catch (error) {
-      setError(
+      toast.error(
         error instanceof Error ? error.message : "Failed to delete service",
       );
+    } finally {
+      setDeleting(false);
     }
   };
-
   return (
     <div className="space-y-7">
       {/* Header */}
@@ -203,22 +228,7 @@ export default function ManageServicesPage() {
         </Link>
       </div>
 
-      {/* Messages */}
-      {message && (
-        <div className="flex items-center justify-between rounded-xl bg-green-50 p-4 text-sm text-green-700">
-          {message}
-          <button onClick={() => setMessage("")}>✕</button>
-        </div>
-      )}
-
-      {error && (
-        <div className="flex items-center justify-between rounded-xl bg-red-50 p-4 text-sm text-red-600">
-          {error}
-          <button onClick={() => setError("")}>✕</button>
-        </div>
-      )}
-
-      {/* Summary */}
+      {/* Summary Cards */}
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-2xl border border-[#E9DED2] bg-white p-5">
           <p className="text-sm text-[#806F62]">Total Services</p>
@@ -242,6 +252,27 @@ export default function ManageServicesPage() {
         </div>
       </div>
 
+      {/* Status Pill Tabs */}
+      <div className="flex flex-wrap items-center gap-3">
+        {(["all", "active", "inactive"] as const).map((tab) => {
+          const isSelected = statusFilter === tab;
+          return (
+            <button
+              key={tab}
+              type="button"
+              onClick={() => handleStatusTabChange(tab)}
+              className={`rounded-full px-6 py-2.5 text-sm font-semibold capitalize transition ${
+                isSelected
+                  ? "bg-[#80583D] text-white shadow-sm"
+                  : "border border-[#E9DED2] bg-white text-[#5C4B3E] hover:bg-[#FAF7F2]"
+              }`}
+            >
+              {tab}
+            </button>
+          );
+        })}
+      </div>
+
       {/* Search & Filters */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {/* Search */}
@@ -260,18 +291,19 @@ export default function ManageServicesPage() {
           />
         </div>
 
-        {/* Category Filter */}
+        {/* Updated Category Filter */}
         <div className="relative">
           <select
             value={category}
-            onChange={(e) => handleCategoryChange(e.target.value)}
+            onChange={(e) => setCategory(e.target.value)}
             className="w-full appearance-none rounded-xl border border-[#E9DED2] bg-white px-4 py-3 text-sm text-[#38291F] outline-none transition focus:border-[#80583D] focus:ring-2 focus:ring-[#80583D]/10"
           >
             <option value="all">All Categories</option>
-            <option value="hair">Hair</option>
-            <option value="skin">Skin</option>
-            <option value="nail">Nail</option>
-            <option value="makeup">Makeup</option>
+            {CATEGORIES.map((cat) => (
+              <option key={cat} value={cat.toLowerCase()}>
+                {cat}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -296,9 +328,13 @@ export default function ManageServicesPage() {
         {/* Table Header */}
         <div className="flex items-center justify-between border-b border-[#E9DED2] p-4 sm:p-5">
           <div>
-            <h2 className="font-bold text-[#38291F]">All Services</h2>
+            <h2 className="font-bold capitalize text-[#38291F]">
+              {statusFilter === "all"
+                ? "All Services"
+                : `${statusFilter} Services`}
+            </h2>
             <p className="mt-1 text-xs text-[#806F62]">
-              {services.length} services available
+              Showing {filteredServices.length} of {services.length} services
             </p>
           </div>
 
@@ -327,15 +363,19 @@ export default function ManageServicesPage() {
             </h3>
 
             <p className="mt-2 text-sm text-[#806F62]">
-              Add your first salon service to get started.
+              {statusFilter !== "all" || category !== "all" || search
+                ? "Try changing your active tab, category, or search filter."
+                : "Add your first salon service to get started."}
             </p>
 
-            <Link
-              href="/dashboard/admin/services/add"
-              className="mt-5 rounded-xl bg-[#80583D] px-5 py-2.5 text-sm font-semibold text-white"
-            >
-              Add Service
-            </Link>
+            {statusFilter === "all" && category === "all" && !search && (
+              <Link
+                href="/dashboard/admin/services/add"
+                className="mt-5 rounded-xl bg-[#80583D] px-5 py-2.5 text-sm font-semibold text-white"
+              >
+                Add Service
+              </Link>
+            )}
           </div>
         ) : (
           <>
@@ -343,7 +383,6 @@ export default function ManageServicesPage() {
             <div className="divide-y divide-[#E9DED2] md:hidden">
               {filteredServices.map((service) => (
                 <div key={service._id} className="space-y-4 p-4">
-                  {/* Service Info */}
                   <div className="flex items-start gap-3">
                     <Image
                       src={service.image}
@@ -368,7 +407,6 @@ export default function ManageServicesPage() {
                     </div>
                   </div>
 
-                  {/* Price & Duration */}
                   <div className="grid grid-cols-2 gap-3 rounded-xl bg-[#FAF7F2] p-3">
                     <div>
                       <p className="text-xs text-[#806F62]">Price</p>
@@ -385,7 +423,6 @@ export default function ManageServicesPage() {
                     </div>
                   </div>
 
-                  {/* Status & Actions */}
                   <div className="flex items-center justify-between gap-3">
                     <button
                       onClick={() => handleStatusChange(service)}
@@ -413,9 +450,9 @@ export default function ManageServicesPage() {
                       </Link>
 
                       <button
-                        onClick={() => handleDelete(service._id)}
+                        onClick={() => setDeleteTarget(service)}
                         title="Delete Service"
-                        className="rounded-lg bg-red-50 p-2.5 text-red-600 transition hover:bg-red-100"
+                        className="rounded-lg bg-red-50 p-2.5 text-red-600 transition hover:bg-red-100 cursor-pointer"
                       >
                         <Trash2 size={17} />
                       </button>
@@ -509,9 +546,9 @@ export default function ManageServicesPage() {
                           </Link>
 
                           <button
-                            onClick={() => handleDelete(service._id)}
+                            onClick={() => setDeleteTarget(service)}
                             title="Delete Service"
-                            className="rounded-lg bg-red-50 p-2 text-red-600 transition hover:bg-red-100"
+                            className="rounded-lg bg-red-50 p-2 text-red-600 transition hover:bg-red-100 cursor-pointer"
                           >
                             <Trash2 size={17} />
                           </button>
@@ -525,6 +562,68 @@ export default function ManageServicesPage() {
           </>
         )}
       </div>
+
+      {/* Shadcn Delete Confirmation Dialog */}
+      <AlertDialog
+        open={Boolean(deleteTarget)}
+        onOpenChange={(open) => {
+          if (!open && !deleting) setDeleteTarget(null);
+        }}
+      >
+        <AlertDialogContent className="border-[#E9DED2] bg-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-[#38291F]">
+              Delete Service?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-[#806F62]">
+              Are you sure you want to delete{" "}
+              <span className="font-semibold text-[#38291F]">
+                &ldquo;{deleteTarget?.serviceName}&rdquo;
+              </span>
+              ? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              disabled={deleting}
+              className="border-[#E9DED2] text-[#5C4B3E] hover:bg-[#FAF7F2] cursor-pointer"
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                void handleConfirmDelete();
+              }}
+              disabled={deleting}
+              className="bg-red-600 text-white hover:bg-red-700 cursor-pointer"
+            >
+              {deleting ? (
+                <>
+                  <Loader2 size={16} className="mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
+  );
+}
+
+export default function ManageServicesPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-64 items-center justify-center">
+          <Loader2 size={32} className="animate-spin text-[#80583D]" />
+        </div>
+      }
+    >
+      <ManageServicesContent />
+    </Suspense>
   );
 }

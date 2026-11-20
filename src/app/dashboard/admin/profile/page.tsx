@@ -15,7 +15,6 @@ export default function AdminProfilePage() {
 
   const [name, setName] = useState(session?.user?.name || "");
   const [email] = useState(session?.user?.email || "");
-  // const [phone, setPhone] = useState("");
   const [image, setImage] = useState(session?.user?.image || "");
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -77,7 +76,7 @@ export default function AdminProfilePage() {
     try {
       setSaving(true);
 
-      const res = await apiFetch("/profile", {
+      const res = await apiFetch("/admin/profile", {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -85,7 +84,6 @@ export default function AdminProfilePage() {
         body: JSON.stringify({
           name: name.trim(),
           image,
-          // phone: phone.trim(),
         }),
       });
 
@@ -197,30 +195,10 @@ export default function AdminProfilePage() {
             </div>
           </div>
 
-          {/* <div>
-            <label className="mb-2 block text-sm font-semibold text-[#38291F]">
-              Phone Number
-            </label>
-
-            <div className="relative">
-              <Phone
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-[#A18B78]"
-                size={18}
-              />
-              <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="Enter phone number"
-                className="w-full rounded-xl border border-[#E9DED2] bg-[#FAF7F2] py-3 pl-11 pr-4 outline-none focus:border-[#80583D]"
-              />
-            </div>
-          </div> */}
-
           <button
             type="submit"
             disabled={saving || uploading}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#80583D] py-3.5 font-semibold text-white transition hover:bg-[#62432E] disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#80583D] py-3.5 font-semibold text-white transition hover:bg-[#62432E] disabled:opacity-50 cursor-pointer"
           >
             {saving ? (
               <Loader2 size={19} className="animate-spin" />
