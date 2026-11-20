@@ -469,7 +469,7 @@ For testing, Stripe provides test cards.
 | Resource | Link |
 |---|---|
 | 🌐 Live Website | [Visit SalonBook](https://naimur-salon-book.vercel.app/) |
-| 🌐 Server Live Website | [Visit SalonBook](https://salon-book-server-123.vercel.app/) |
+| 🌐 Server Live Website | [Visit Server](https://salon-book-server-123.vercel.app/) |
 | 💻 Client Repository | [GitHub Client](https://github.com/Naimur131251/Salon-Book) |
 | ⚙️ Server Repository | [GitHub Server](https://github.com/Naimur131251/Salon-Book-Server) |
 
