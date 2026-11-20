@@ -127,7 +127,7 @@ export async function POST(req: Request) {
         customerId: session.user.id,
       },
 
-      success_url: `${CLIENT_URL}/customer/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${CLIENT_URL}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${CLIENT_URL}/payment/cancel?appointment_id=${appointmentId}`,
     });
 

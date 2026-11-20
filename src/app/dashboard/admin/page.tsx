@@ -11,10 +11,8 @@ import {
   Loader2,
 } from "lucide-react";
 import Link from "next/link";
-// import { getToken } from "@/lib/get-token";
+import { motion } from "motion/react";
 import { apiFetch } from "@/lib/api-fetch";
-
-// const API_URL = process.env.NEXT_PUBLIC_SERVER_BASE_URL;
 
 interface DashboardStats {
   totalCustomers: number;
@@ -66,7 +64,7 @@ const statItems = [
     title: "Successful Payments",
     icon: CreditCard,
     color: "bg-emerald-50 text-emerald-600",
-    href: "/dashboard/admin/payments",
+    href: "/dashboard/admin/transactions", // আপনার ট্রানজ্যাকশন পেজের রাউট অনুযায়ী আপডেট করা হয়েছে
   },
 ] as const;
 
@@ -78,7 +76,9 @@ export default function AdminDashboard() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await apiFetch("/admin/overview");
+        const response = await apiFetch("/admin/overview", {
+          cache: "no-store",
+        });
         const result = await response.json();
 
         if (!response.ok) {
@@ -116,7 +116,11 @@ export default function AdminDashboard() {
 
   return (
     <div>
-      <div>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+      >
         <p className="text-sm font-medium text-[#A47754]">
           SalonBook Administration
         </p>
@@ -128,35 +132,45 @@ export default function AdminDashboard() {
         <p className="mt-2 text-sm text-[#806F62]">
           Monitor your salon&apos;s performance and activities.
         </p>
-      </div>
+      </motion.div>
 
       <div className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-        {statItems.map((item) => {
+        {statItems.map((item, index) => {
           const Icon = item.icon;
-          const value = stats[item.key];
+          const value = stats[item.key] ?? 0;
 
           return (
-            <Link
+            <motion.div
               key={item.key}
-              href={item.href}
-              className="block cursor-pointer rounded-2xl border border-[#E9DED2] bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
+              initial={{ opacity: 0, y: 24, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{
+                duration: 0.45,
+                delay: index * 0.08,
+                ease: [0.22, 1, 0.36, 1],
+              }}
             >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-[#806F62]">
-                    {item.title}
-                  </p>
-                  <h2 className="mt-4 text-3xl font-bold text-[#38291F]">
-                    {item.key === "totalSuccessfulPayments"
-                      ? `৳${value.toLocaleString("en-BD")}`
-                      : value.toLocaleString("en-BD")}
-                  </h2>
+              <Link
+                href={item.href}
+                className="block cursor-pointer rounded-2xl border border-[#E9DED2] bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-[#806F62]">
+                      {item.title}
+                    </p>
+                    <h2 className="mt-4 text-3xl font-bold text-[#38291F]">
+                      {item.key === "totalSuccessfulPayments"
+                        ? `৳${value.toLocaleString("en-BD")}`
+                        : value.toLocaleString("en-BD")}
+                    </h2>
+                  </div>
+                  <div className={`rounded-xl p-4 ${item.color}`}>
+                    <Icon size={25} />
+                  </div>
                 </div>
-                <div className={`rounded-xl p-4 ${item.color}`}>
-                  <Icon size={25} />
-                </div>
-              </div>
-            </Link>
+              </Link>
+            </motion.div>
           );
         })}
       </div>

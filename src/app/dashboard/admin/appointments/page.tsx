@@ -1,12 +1,18 @@
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
-import { useSearchParams } from "next/navigation"; // ১. useSearchParams ইম্পোর্ট করা হয়েছে
+import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Eye, Check, X, Loader2, RefreshCw } from "lucide-react";
 import { apiFetch } from "@/lib/api-fetch";
-
-// const API_URL = process.env.NEXT_PUBLIC_SERVER_BASE_URL;
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface IAppointment {
   _id: string;
@@ -29,23 +35,28 @@ interface IAppointment {
   createdAt: string;
 }
 
-// মূল কন্টেন্ট আলাদা কম্পোনেন্টে রাখা হয়েছে যাতে Suspense ব্যবহার করা যায়
 function AppointmentsContent() {
   const searchParams = useSearchParams();
-  const statusFromUrl = searchParams.get("status"); // ২. URL থেকে status নেওয়া হলো
+  const statusFromUrl = searchParams.get("status");
 
   const [appointments, setAppointments] = useState<IAppointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<IAppointment | null>(null);
   const [updating, setUpdating] = useState<string | null>(null);
+  const [confirmAction, setConfirmAction] = useState<{
+    appointment: IAppointment;
+    status: "confirmed" | "cancelled";
+  } | null>(null);
 
   const [manualFilter, setManualFilter] = useState<{
     statusFromUrl: string | null;
     filter: string;
   } | null>(null);
+
   const isValidStatus =
     statusFromUrl &&
     ["pending", "confirmed", "cancelled"].includes(statusFromUrl);
+
   const filter =
     manualFilter?.statusFromUrl === statusFromUrl
       ? manualFilter.filter
@@ -82,7 +93,7 @@ function AppointmentsContent() {
     void Promise.resolve().then(fetchAppointments);
   }, []);
 
-  const updateStatus = async (
+  const openConfirmDialog = (
     appointment: IAppointment,
     status: "confirmed" | "cancelled",
   ) => {
@@ -99,11 +110,12 @@ function AppointmentsContent() {
       return;
     }
 
-    const confirmed = window.confirm(
-      `Are you sure you want to ${status} this appointment?`,
-    );
+    setConfirmAction({ appointment, status });
+  };
 
-    if (!confirmed) return;
+  const handleConfirmUpdate = async () => {
+    if (!confirmAction) return;
+    const { appointment, status } = confirmAction;
 
     try {
       setUpdating(appointment._id);
@@ -124,6 +136,7 @@ function AppointmentsContent() {
       if (!res.ok) throw new Error(result.message);
 
       toast.success(result.message || "Appointment updated");
+      setConfirmAction(null);
       setSelected(null);
       refreshAppointments();
     } catch (error) {
@@ -132,7 +145,6 @@ function AppointmentsContent() {
       setUpdating(null);
     }
   };
-
   const filteredAppointments = appointments.filter((item) =>
     filter === "all" ? true : item.status === filter,
   );
@@ -199,7 +211,7 @@ function AppointmentsContent() {
           <button
             key={status}
             onClick={() => setManualFilter({ statusFromUrl, filter: status })}
-            className={`rounded-full px-4 py-2 text-sm font-semibold capitalize ${
+            className={`cursor-pointer rounded-full px-4 py-2 text-sm font-semibold capitalize ${
               filter === status
                 ? "bg-[#80583D] text-white"
                 : "border border-[#E9DED2] bg-white text-[#806F62]"
@@ -313,25 +325,25 @@ function AppointmentsContent() {
                     </button>
 
                     <div className="flex items-center gap-2">
-                      {item.status === "pending" && (
-                        <button
-                          disabled={updating === item._id}
-                          onClick={() => updateStatus(item, "confirmed")}
-                          title="Confirm"
-                          className="rounded-lg bg-green-50 p-2 text-green-700 disabled:opacity-50"
-                        >
-                          <Check size={17} />
-                        </button>
-                      )}
-
                       {["pending", "confirmed"].includes(item.status) && (
                         <button
                           disabled={updating === item._id}
-                          onClick={() => updateStatus(item, "cancelled")}
+                          onClick={() => openConfirmDialog(item, "cancelled")}
                           title="Cancel"
                           className="rounded-lg bg-red-50 p-2 text-red-600 disabled:opacity-50"
                         >
                           <X size={17} />
+                        </button>
+                      )}
+
+                      {item.status === "pending" && (
+                        <button
+                          disabled={updating === item._id}
+                          onClick={() => openConfirmDialog(item, "confirmed")}
+                          title="Confirm"
+                          className="rounded-lg bg-green-50 p-2 text-green-700 disabled:opacity-50"
+                        >
+                          <Check size={17} />
                         </button>
                       )}
                     </div>
@@ -412,30 +424,34 @@ function AppointmentsContent() {
                           <button
                             onClick={() => setSelected(item)}
                             title="View Details"
-                            className="rounded-lg bg-[#EDE0D3] p-2 text-[#80583D]"
+                            className="cursor-pointer rounded-lg bg-[#EDE0D3] p-2 text-[#80583D]"
                           >
                             <Eye size={17} />
                           </button>
 
-                          {item.status === "pending" && (
-                            <button
-                              disabled={updating === item._id}
-                              onClick={() => updateStatus(item, "confirmed")}
-                              title="Confirm"
-                              className="rounded-lg bg-green-50 p-2 text-green-700 disabled:opacity-50"
-                            >
-                              <Check size={17} />
-                            </button>
-                          )}
-
                           {["pending", "confirmed"].includes(item.status) && (
                             <button
                               disabled={updating === item._id}
-                              onClick={() => updateStatus(item, "cancelled")}
+                              onClick={() =>
+                                openConfirmDialog(item, "cancelled")
+                              }
                               title="Cancel"
-                              className="rounded-lg bg-red-50 p-2 text-red-600 disabled:opacity-50"
+                              className="cursor-pointer rounded-lg bg-red-50 p-2 text-red-600 disabled:opacity-50"
                             >
                               <X size={17} />
+                            </button>
+                          )}
+
+                          {item.status === "pending" && (
+                            <button
+                              disabled={updating === item._id}
+                              onClick={() =>
+                                openConfirmDialog(item, "confirmed")
+                              }
+                              title="Confirm"
+                              className="cursor-pointer rounded-lg bg-green-50 p-2 text-green-700 disabled:opacity-50"
+                            >
+                              <Check size={17} />
                             </button>
                           )}
                         </div>
@@ -449,6 +465,7 @@ function AppointmentsContent() {
         )}
       </div>
 
+      {/* Appointment Details Modal */}
       {selected && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
@@ -456,7 +473,10 @@ function AppointmentsContent() {
               <h2 className="text-xl font-bold text-[#38291F]">
                 Appointment Details
               </h2>
-              <button onClick={() => setSelected(null)}>
+              <button
+                onClick={() => setSelected(null)}
+                className="cursor-pointer"
+              >
                 <X />
               </button>
             </div>
@@ -512,13 +532,68 @@ function AppointmentsContent() {
 
             <button
               onClick={() => setSelected(null)}
-              className="mt-6 w-full rounded-xl bg-[#80583D] py-3 font-semibold text-white"
+              className="mt-6 w-full cursor-pointer rounded-xl bg-[#80583D] py-3 font-semibold text-white"
             >
               Close
             </button>
           </div>
         </div>
       )}
+
+      {/* Shadcn Confirmation Dialog */}
+      <Dialog
+        open={!!confirmAction}
+        onOpenChange={(open) => {
+          if (!open && !updating) setConfirmAction(null);
+        }}
+      >
+        <DialogContent className="border-[#E9DED2] bg-white sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-[#38291F]">
+              {confirmAction?.status === "confirmed"
+                ? "Confirm Appointment"
+                : "Cancel Appointment"}
+            </DialogTitle>
+            <DialogDescription className="pt-2 text-sm text-[#806F62]">
+              Are you sure you want to{" "}
+              <span className="font-semibold text-[#38291F]">
+                {confirmAction?.status}
+              </span>{" "}
+              the appointment for{" "}
+              <span className="font-semibold text-[#38291F]">
+                {confirmAction?.appointment.customerId?.name || "this customer"}
+              </span>
+              ?
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter className="mt-4 flex gap-2 sm:justify-end">
+            <button
+              type="button"
+              disabled={!!updating}
+              onClick={() => setConfirmAction(null)}
+              className="cursor-pointer rounded-xl border border-[#E9DED2] bg-white px-4 py-2.5 text-sm font-semibold text-[#806F62] transition hover:bg-[#FAF7F2] disabled:opacity-50"
+            >
+              No, Keep It
+            </button>
+
+            <button
+              type="button"
+              disabled={!!updating}
+              onClick={handleConfirmUpdate}
+              className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition disabled:opacity-50 ${
+                confirmAction?.status === "confirmed"
+                  ? "bg-[#80583D] hover:bg-[#62432E]"
+                  : "bg-red-600 hover:bg-red-700"
+              }`}
+            >
+              {updating && <Loader2 size={15} className="animate-spin" />}
+              Yes,{" "}
+              {confirmAction?.status === "confirmed" ? "Confirm" : "Cancel"}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

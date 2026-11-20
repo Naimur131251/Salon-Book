@@ -9,26 +9,27 @@ import {
   RefreshCw,
   CheckCircle,
   XCircle,
+  Check,
+  Copy,
 } from "lucide-react";
+import { motion } from "motion/react";
 import { apiFetch } from "@/lib/api-fetch";
-
-// const API_URL = process.env.NEXT_PUBLIC_SERVER_BASE_URL;
 
 interface ITransaction {
   _id: string;
   appointmentId: string;
-  customerId: {
-    name: string;
-    email: string;
+  customerId?: {
+    name?: string;
+    email?: string;
   };
-  service: {
-    serviceName: string;
+  service?: {
+    serviceName?: string;
     image?: string;
   };
   appointmentDate: string;
   amount: number;
-  currency: string;
-  stripeSessionId: string;
+  currency?: string;
+  stripeSessionId?: string;
   status: "paid" | "failed";
   createdAt: string;
 }
@@ -37,21 +38,32 @@ export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<ITransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const handleCopyReference = async (sessionId: string) => {
+    try {
+      await navigator.clipboard.writeText(sessionId);
+      setCopiedId(sessionId);
+      toast.success("Stripe Reference copied!");
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch {
+      toast.error("Failed to copy reference");
+    }
+  };
 
   const fetchTransactions = async () => {
     try {
       setLoading(true);
 
       const res = await apiFetch("/admin/transactions", {
-        // credentials: "include",
         cache: "no-store",
       });
 
       const result = await res.json();
 
-      if (!res.ok) throw new Error(result.message);
+      if (!res.ok) throw new Error(result.message || "Failed to load data");
 
-      setTransactions(result.data);
+      setTransactions(result.data || []);
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to fetch transactions",
@@ -66,19 +78,27 @@ export default function TransactionsPage() {
   }, []);
 
   const filtered = transactions.filter((item) =>
-    `${item.customerId?.name} ${item.customerId?.email} ${item.stripeSessionId}`
+    `${item.customerId?.name || ""} ${item.customerId?.email || ""} ${item.service?.serviceName || ""} ${item.stripeSessionId || ""}`
       .toLowerCase()
       .includes(search.toLowerCase()),
   );
 
-  const paid = transactions.filter((t) => t.status === "paid");
+  const paid = transactions.filter((t) => t.status === "paid" || "succeeded");
   const failed = transactions.filter((t) => t.status === "failed");
 
-  const totalRevenue = paid.reduce((total, item) => total + item.amount, 0);
+  const totalRevenue = paid.reduce(
+    (total, item) => total + (item.amount || 0),
+    0,
+  );
 
   return (
     <div className="space-y-7">
-      <div>
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+      >
         <p className="text-sm font-medium text-[#A47754]">
           Financial Management
         </p>
@@ -86,24 +106,40 @@ export default function TransactionsPage() {
         <p className="mt-2 text-sm text-[#806F62]">
           Monitor Stripe payment transactions.
         </p>
-      </div>
+      </motion.div>
 
+      {/* Summary Cards */}
       <div className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-2xl border border-[#E9DED2] bg-white p-5">
+        <motion.div
+          initial={{ opacity: 0, y: 25 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}
+          className="rounded-2xl border border-[#E9DED2] bg-white p-5 transition-shadow hover:shadow-md"
+        >
           <p className="text-sm text-[#806F62]">Total Transactions</p>
           <h2 className="mt-2 text-2xl font-bold text-[#38291F]">
             {transactions.length}
           </h2>
-        </div>
+        </motion.div>
 
-        <div className="rounded-2xl border border-[#E9DED2] bg-white p-5">
+        <motion.div
+          initial={{ opacity: 0, y: 25 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2, ease: "easeOut" }}
+          className="rounded-2xl border border-[#E9DED2] bg-white p-5 transition-shadow hover:shadow-md"
+        >
           <p className="text-sm text-[#806F62]">Successful Payments</p>
           <h2 className="mt-2 text-2xl font-bold text-green-700">
             {paid.length}
           </h2>
-        </div>
+        </motion.div>
 
-        <div className="rounded-2xl border border-[#E9DED2] bg-white p-5">
+        <motion.div
+          initial={{ opacity: 0, y: 25 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3, ease: "easeOut" }}
+          className="rounded-2xl border border-[#E9DED2] bg-white p-5 transition-shadow hover:shadow-md"
+        >
           <p className="text-sm text-[#806F62]">Total Revenue</p>
           <h2 className="mt-2 text-2xl font-bold text-[#80583D]">
             ৳{totalRevenue.toLocaleString("en-BD")}
@@ -111,10 +147,15 @@ export default function TransactionsPage() {
           <p className="mt-1 text-xs text-[#806F62]">
             {failed.length} failed transactions excluded
           </p>
-        </div>
+        </motion.div>
       </div>
-
-      <div className="relative">
+      {/* Search Bar */}
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.35, ease: "easeOut" }}
+        className="relative"
+      >
         <Search
           className="absolute left-4 top-1/2 -translate-y-1/2 text-[#A18B78]"
           size={19}
@@ -122,12 +163,18 @@ export default function TransactionsPage() {
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search customer or Stripe session..."
-          className="w-full rounded-xl border border-[#E9DED2] bg-white py-3 pl-11 pr-4 outline-none focus:border-[#80583D]"
+          placeholder="Search customer, service, or Stripe session..."
+          className="w-full rounded-xl border border-[#E9DED2] bg-white py-3 pl-11 pr-4 text-sm text-[#38291F] outline-none transition focus:border-[#80583D]"
         />
-      </div>
+      </motion.div>
 
-      <div className="overflow-hidden rounded-2xl border border-[#E9DED2] bg-white">
+      {/* Transactions Table */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.55, delay: 0.4, ease: "easeOut" }}
+        className="overflow-hidden rounded-2xl border border-[#E9DED2] bg-white"
+      >
         <div className="flex items-center justify-between border-b border-[#E9DED2] p-5">
           <div>
             <h2 className="font-bold text-[#38291F]">Payment History</h2>
@@ -136,13 +183,15 @@ export default function TransactionsPage() {
             </p>
           </div>
 
-          <button
+          <motion.button
+            whileTap={{ scale: 0.92 }}
             onClick={fetchTransactions}
             disabled={loading}
-            className="rounded-lg border border-[#E9DED2] p-2 text-[#80583D]"
+            title="Refresh transactions"
+            className="cursor-pointer rounded-lg border border-[#E9DED2] p-2 text-[#80583D] transition hover:bg-[#FAF7F2] disabled:opacity-50"
           >
-            <RefreshCw size={18} />
-          </button>
+            <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
+          </motion.button>
         </div>
 
         {loading ? (
@@ -150,10 +199,14 @@ export default function TransactionsPage() {
             <Loader2 className="animate-spin text-[#80583D]" size={32} />
           </div>
         ) : filtered.length === 0 ? (
-          <div className="py-16 text-center">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="py-16 text-center"
+          >
             <CreditCard className="mx-auto mb-3 text-[#A47754]" size={35} />
             <p className="text-[#806F62]">No transactions found.</p>
-          </div>
+          </motion.div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-250 text-left">
@@ -170,14 +223,24 @@ export default function TransactionsPage() {
               </thead>
 
               <tbody className="divide-y divide-[#E9DED2]">
-                {filtered.map((item) => (
-                  <tr key={item._id}>
+                {filtered.map((item, index) => (
+                  <motion.tr
+                    key={item._id}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{
+                      duration: 0.35,
+                      delay: Math.min(index * 0.05, 0.4),
+                      ease: "easeOut",
+                    }}
+                    className="transition-colors hover:bg-[#FAF7F2]/60"
+                  >
                     <td className="px-5 py-4">
                       <p className="font-semibold text-[#38291F]">
-                        {item.customerId?.name}
+                        {item.customerId?.name || "Unknown Customer"}
                       </p>
                       <p className="text-xs text-[#806F62]">
-                        {item.customerId?.email}
+                        {item.customerId?.email || "No email"}
                       </p>
                     </td>
 
@@ -186,23 +249,50 @@ export default function TransactionsPage() {
                     </td>
 
                     <td className="px-5 py-4 text-sm text-[#806F62]">
-                      {new Date(item.appointmentDate).toLocaleDateString()}
+                      {item.appointmentDate
+                        ? new Date(item.appointmentDate).toLocaleDateString()
+                        : "N/A"}
                     </td>
 
                     <td className="px-5 py-4 font-semibold text-[#80583D]">
-                      {item.currency?.toUpperCase()}{" "}
-                      {item.amount.toLocaleString()}
+                      {item.currency?.toUpperCase() || "BDT"}{" "}
+                      {item.amount?.toLocaleString() || 0}
                     </td>
 
                     <td className="px-5 py-4">
-                      <span
-                        title={item.stripeSessionId}
-                        className="text-xs text-[#806F62]"
-                      >
-                        {item.stripeSessionId
-                          ? `${item.stripeSessionId.slice(0, 15)}...`
-                          : "N/A"}
-                      </span>
+                      {item.stripeSessionId ? (
+                        <div className="inline-flex items-center gap-2 rounded-lg border border-[#E9DED2] bg-[#FAF7F2] px-2.5 py-1.5">
+                          <span
+                            title={item.stripeSessionId}
+                            className="font-mono text-xs font-medium text-[#38291F]"
+                          >
+                            {`${item.stripeSessionId.slice(0, 7)}...`}
+                          </span>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleCopyReference(item.stripeSessionId!)
+                            }
+                            title="Copy Full Stripe Reference"
+                            className="inline-flex cursor-pointer items-center gap-1 rounded bg-white px-2 py-0.5 text-[11px] font-semibold text-[#80583D] shadow-2xs transition hover:bg-[#F3ECE3] active:scale-95"
+                          >
+                            {copiedId === item.stripeSessionId ? (
+                              <>
+                                <Check size={12} className="text-green-600" />
+                                <span className="text-green-600">Copied</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy size={12} />
+                                <span>Copy</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-[#806F62]">N/A</span>
+                      )}
                     </td>
 
                     <td className="px-5 py-4">
@@ -223,15 +313,17 @@ export default function TransactionsPage() {
                     </td>
 
                     <td className="px-5 py-4 text-sm text-[#806F62]">
-                      {new Date(item.createdAt).toLocaleString()}
+                      {item.createdAt
+                        ? new Date(item.createdAt).toLocaleString()
+                        : "N/A"}
                     </td>
-                  </tr>
+                  </motion.tr>
                 ))}
               </tbody>
             </table>
           </div>
         )}
-      </div>
+      </motion.div>
     </div>
   );
 }

@@ -14,6 +14,7 @@
     "@shadcn/react": "^0.3.1",
     "@stripe/stripe-js": "^10.3.0",
     "better-auth": "^1.7.25",
+    "canvas-confetti": "^1.9.4",
     "class-variance-authority": "^0.7.1",
     "cmdk": "^1.1.1",
     "cn": "^0.5.2",
@@ -39,6 +40,7 @@
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "4.3.3",
+    "@types/canvas-confetti": "^1.9.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

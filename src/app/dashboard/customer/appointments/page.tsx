@@ -11,6 +11,8 @@ import {
   XCircle,
   Loader2,
   RefreshCw,
+  Copy,
+  Check,
 } from "lucide-react";
 import Image from "next/image";
 import { apiFetch } from "@/lib/api-fetch";
@@ -22,6 +24,7 @@ interface Appointment {
   timeSlot: string;
   status: "pending" | "confirmed" | "cancelled";
   paymentStatus: "unpaid" | "paid";
+  stripeSessionId?: string;
   servicePrice: number;
   service?: {
     serviceName: string;
@@ -43,6 +46,19 @@ function CustomerAppointmentsContent() {
   const searchParams = useSearchParams();
 
   const statusFromUrl = searchParams.get("status");
+
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const handleCopyTransaction = async (sessionId: string) => {
+    try {
+      await navigator.clipboard.writeText(sessionId);
+      setCopiedId(sessionId);
+      toast.success("Transaction ID copied!");
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch {
+      toast.error("Failed to copy ID");
+    }
+  };
 
   const isValidStatus =
     statusFromUrl &&
@@ -388,6 +404,7 @@ function CustomerAppointmentsContent() {
                   </div>
 
                   {/* Price and Payment */}
+                  {/* Price and Payment */}
                   <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
                     <div>
                       <p className="text-sm font-bold text-[#352A24]">
@@ -409,9 +426,10 @@ function CustomerAppointmentsContent() {
                     </div>
 
                     {/* Payment and Cancel Buttons */}
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      {/* ১. শুধুমাত্র Pending অবস্থায় Cancel বাটন দেখাবে */}
                       {item.paymentStatus === "unpaid" &&
-                        ["pending", "confirmed"].includes(item.status) && (
+                        item.status === "pending" && (
                           <motion.button
                             whileHover={{ scale: 1.03 }}
                             whileTap={{ scale: 0.95 }}
@@ -428,7 +446,46 @@ function CustomerAppointmentsContent() {
                           </motion.button>
                         )}
 
-                      {item.status !== "cancelled" &&
+                      {/* Paid হলে Transaction ID ও Copy বাটন দেখাবে */}
+                      {item.paymentStatus === "paid" &&
+                        item.stripeSessionId && (
+                          <div className="inline-flex items-center gap-1.5 rounded-lg bg-[#FAF7F2] px-2.5 py-1.5 text-[11px] text-[#806F62]">
+                            <span className="font-medium text-[#A47754]">
+                              Txn ID:
+                            </span>
+                            <span
+                              title={item.stripeSessionId}
+                              className="font-mono font-semibold text-[#38291F]"
+                            >
+                              {item.stripeSessionId.length > 18
+                                ? `${item.stripeSessionId.slice(0, 10)}...${item.stripeSessionId.slice(-6)}`
+                                : item.stripeSessionId}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleCopyTransaction(item.stripeSessionId!)
+                              }
+                              title="Copy Transaction ID"
+                              className="ml-0.5 inline-flex cursor-pointer items-center gap-1 rounded bg-white px-1.5 py-0.5 text-[10px] font-semibold text-[#80583D] shadow-2xs transition hover:bg-[#F3ECE3] active:scale-95"
+                            >
+                              {copiedId === item.stripeSessionId ? (
+                                <>
+                                  <Check size={11} className="text-green-600" />
+                                  <span className="text-green-600">Copied</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Copy size={11} />
+                                  <span>Copy</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        )}
+
+                      {/* ২. শুধুমাত্র Confirmed অবস্থায় Cancel-এর বদলে Pay Now (বা Paid ব্যাজ) দেখাবে */}
+                      {item.status === "confirmed" &&
                         (item.paymentStatus === "paid" ? (
                           <span className="rounded-lg bg-green-50 px-4 py-2 text-xs font-semibold text-green-600">
                             Paid
