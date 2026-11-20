@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { apiFetch } from "@/lib/api-fetch";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface Appointment {
   _id: string;
@@ -195,10 +196,40 @@ function CustomerAppointmentsContent() {
     return <p className="p-8 text-[#38291F]">Please sign in first.</p>;
   }
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.08,
+      },
+    },
+  };
+
+  const fadeUpVariants = {
+    hidden: { opacity: 0, y: 15 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.35,
+        ease: "easeOut" as const,
+      },
+    },
+  };
+
   return (
-    <div className="space-y-7">
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="space-y-7"
+    >
       {/* Header */}
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+      <motion.div
+        variants={fadeUpVariants}
+        className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center"
+      >
         <div>
           <p className="text-sm font-medium text-[#A47754]">Customer Portal</p>
           <h1 className="mt-2 text-3xl font-bold text-[#38291F]">
@@ -209,18 +240,23 @@ function CustomerAppointmentsContent() {
           </p>
         </div>
 
-        <button
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.97 }}
           onClick={refreshAppointments}
           disabled={loading}
           className="flex items-center justify-center gap-2 rounded-xl border border-[#E9DED2] bg-white px-4 py-3 text-sm font-semibold text-[#80583D] transition hover:bg-[#FAF7F2] disabled:opacity-50"
         >
           <RefreshCw size={17} className={loading ? "animate-spin" : ""} />
           Refresh
-        </button>
-      </div>
+        </motion.button>
+      </motion.div>
 
       {/* Summary Cards */}
-      <div className="grid gap-4 sm:grid-cols-3">
+      <motion.div
+        variants={containerVariants}
+        className="grid gap-4 sm:grid-cols-3"
+      >
         {[
           { label: "Total", value: appointments.length },
           {
@@ -232,25 +268,33 @@ function CustomerAppointmentsContent() {
             value: appointments.filter((a) => a.status === "confirmed").length,
           },
         ].map((item) => (
-          <div
+          <motion.div
             key={item.label}
+            variants={fadeUpVariants}
+            whileHover={{ y: -3 }}
+            transition={{ duration: 0.2 }}
             className="rounded-2xl border border-[#E9DED2] bg-white p-5"
           >
             <p className="text-sm text-[#806F62]">{item.label} Appointments</p>
             <h2 className="mt-2 text-2xl font-bold text-[#38291F]">
               {item.value}
             </h2>
-          </div>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
 
       {/* Filter and Sorting */}
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+      <motion.div
+        variants={fadeUpVariants}
+        className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center"
+      >
         <div className="flex flex-wrap gap-2">
           {["all", "pending", "confirmed", "cancelled", "paid"].map(
             (status) => (
-              <button
+              <motion.button
                 key={status}
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => handleFilterChange(status)}
                 className={`rounded-full px-4 py-2 text-sm font-semibold capitalize transition ${
                   activeFilter === status
@@ -259,7 +303,7 @@ function CustomerAppointmentsContent() {
                 }`}
               >
                 {status}
-              </button>
+              </motion.button>
             ),
           )}
         </div>
@@ -276,160 +320,180 @@ function CustomerAppointmentsContent() {
             <option value="date-desc">Appointment Date: Latest</option>
           </select>
         </div>
-      </div>
+      </motion.div>
 
       {/* Appointment Service Cards */}
       <div className="w-full space-y-4">
-        {filteredAppointments.length > 0 ? (
-          filteredAppointments.map((item) => (
-            <div
-              key={item._id}
-              className="grid w-full min-w-0 grid-cols-[76px_minmax(0,1fr)] gap-3 rounded-2xl border border-[#eadfd5] bg-white p-3 shadow-sm transition hover:shadow-md sm:grid-cols-[112px_minmax(0,1fr)] sm:gap-5 sm:p-5"
-            >
-              {/* Service Image */}
-              <div className="relative h-20 w-19 overflow-hidden rounded-xl sm:h-28 sm:w-28">
-                <Image
-                  src={item.service?.image || "/placeholder.png"}
-                  alt={item.service?.serviceName || "Service"}
-                  fill
-                  sizes="(max-width: 640px) 76px, 112px"
-                  className="object-cover"
-                />
-              </div>
-
-              {/* Service Information */}
-              <div className="min-w-0">
-                {/* Title and Status */}
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <h3 className="wrap-break-words text-sm font-bold text-[#352A24] sm:text-base">
-                      {item.service?.serviceName || "Service"}
-                    </h3>
-                    <p className="mt-1 text-xs text-[#927D70] sm:text-sm">
-                      {item.service?.category || "General"}
-                    </p>
-                  </div>
-
-                  {/* Only One Appointment Status */}
-                  <span
-                    className={`shrink-0 rounded-full px-3 py-1 text-[10px] font-semibold capitalize sm:text-xs ${
-                      item.status === "confirmed"
-                        ? "bg-[#f5eadc] text-[#8B5E3C]"
-                        : item.status === "cancelled"
-                          ? "bg-red-50 text-red-600"
-                          : "bg-yellow-50 text-yellow-700"
-                    }`}
-                  >
-                    {item.status}
-                  </span>
-                </div>
-
-                {/* Date and Time */}
-                <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-[11px] text-[#927D70] sm:text-xs">
-                  <span className="flex items-center gap-1.5">
-                    <CalendarDays size={13} />
-                    {new Date(item.appointmentDate).toLocaleDateString()}
-                  </span>
-
-                  <span className="flex items-center gap-1.5">
-                    <Clock size={13} />
-                    {item.timeSlot}
-                  </span>
-                </div>
-
-                {/* Price and Payment */}
-                <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-bold text-[#352A24]">
-                      ৳{item.servicePrice}
-                    </p>
-
-                    <p className="mt-1 text-[11px] text-[#927D70]">
-                      Payment:{" "}
-                      <span
-                        className={
-                          item.paymentStatus === "paid"
-                            ? "font-semibold text-green-600"
-                            : "text-[#927D70]"
-                        }
-                      >
-                        {item.paymentStatus === "paid" ? "Paid" : "Unpaid"}
-                      </span>
-                    </p>
-                  </div>
-
-                  {/* Payment and Cancel Buttons */}
-                  <div className="flex flex-wrap gap-2">
-                    {item.paymentStatus === "unpaid" &&
-                      ["pending", "confirmed"].includes(item.status) && (
-                        <button
-                          disabled={processing === item._id}
-                          onClick={() => handleCancel(item._id)}
-                          className="flex shrink-0 items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-100 disabled:opacity-50 cursor-pointer"
-                        >
-                          {processing === item._id ? (
-                            <Loader2 size={14} className="animate-spin" />
-                          ) : (
-                            <XCircle size={14} />
-                          )}
-                          Cancel
-                        </button>
-                      )}
-
-                    {item.status !== "cancelled" &&
-                      (item.paymentStatus === "paid" ? (
-                        <span className="rounded-lg bg-green-50 px-4 py-2 text-xs font-semibold text-green-600">
-                          Paid
-                        </span>
-                      ) : (
-                        <button
-                          disabled={processing === item._id}
-                          onClick={() => handlePayment(item._id)}
-                          className="flex shrink-0 items-center gap-2 rounded-lg bg-[#8B5E3C] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#70482E] disabled:cursor-not-allowed disabled:opacity-50 sm:px-4 cursor-pointer"
-                        >
-                          {processing === item._id ? (
-                            <Loader2 size={14} className="animate-spin" />
-                          ) : (
-                            <CreditCard size={14} />
-                          )}
-                          {processing === item._id
-                            ? "Processing..."
-                            : "Pay Now"}
-                        </button>
-                      ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))
-        ) : (
-          <div className="rounded-2xl border border-[#E9DED2] bg-white py-16 text-center">
-            <CalendarDays className="mx-auto text-[#A47754]" size={40} />
-
-            <h3 className="mt-4 text-xl font-bold text-[#38291F]">
-              {activeFilter === "all"
-                ? "No Appointments Yet"
-                : "No Matching Appointments"}
-            </h3>
-
-            <p className="mt-2 text-sm text-[#806F62]">
-              {activeFilter === "all"
-                ? "Your salon booking history will appear here."
-                : `No ${activeFilter} appointments found.`}
-            </p>
-
-            {activeFilter !== "all" && (
-              <button
-                onClick={() => handleFilterChange("all")}
-                className="mt-5 rounded-lg bg-[#80583D] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#62432E]"
+        <AnimatePresence mode="popLayout">
+          {filteredAppointments.length > 0 ? (
+            filteredAppointments.map((item) => (
+              <motion.div
+                key={item._id}
+                layout
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.96 }}
+                transition={{ duration: 0.25 }}
+                whileHover={{ y: -2 }}
+                className="grid w-full min-w-0 grid-cols-[76px_minmax(0,1fr)] gap-3 rounded-2xl border border-[#eadfd5] bg-white p-3 shadow-sm transition-shadow hover:shadow-md sm:grid-cols-[112px_minmax(0,1fr)] sm:gap-5 sm:p-5"
               >
-                Clear Filter
-              </button>
-            )}
-          </div>
-        )}
+                {/* Service Image */}
+                <div className="relative h-20 w-19 overflow-hidden rounded-xl sm:h-28 sm:w-28">
+                  <Image
+                    src={item.service?.image || "/placeholder.png"}
+                    alt={item.service?.serviceName || "Service"}
+                    fill
+                    sizes="(max-width: 640px) 76px, 112px"
+                    className="object-cover transition-transform duration-300 hover:scale-105"
+                  />
+                </div>
+
+                {/* Service Information */}
+                <div className="min-w-0">
+                  {/* Title and Status */}
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <h3 className="wrap-break-words text-sm font-bold text-[#352A24] sm:text-base">
+                        {item.service?.serviceName || "Service"}
+                      </h3>
+                      <p className="mt-1 text-xs text-[#927D70] sm:text-sm">
+                        {item.service?.category || "General"}
+                      </p>
+                    </div>
+
+                    {/* Only One Appointment Status */}
+                    <span
+                      className={`shrink-0 rounded-full px-3 py-1 text-[10px] font-semibold capitalize sm:text-xs ${
+                        item.status === "confirmed"
+                          ? "bg-[#f5eadc] text-[#8B5E3C]"
+                          : item.status === "cancelled"
+                            ? "bg-red-50 text-red-600"
+                            : "bg-yellow-50 text-yellow-700"
+                      }`}
+                    >
+                      {item.status}
+                    </span>
+                  </div>
+                  {/* Date and Time */}
+                  <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-[11px] text-[#927D70] sm:text-xs">
+                    <span className="flex items-center gap-1.5">
+                      <CalendarDays size={13} />
+                      {new Date(item.appointmentDate).toLocaleDateString()}
+                    </span>
+
+                    <span className="flex items-center gap-1.5">
+                      <Clock size={13} />
+                      {item.timeSlot}
+                    </span>
+                  </div>
+
+                  {/* Price and Payment */}
+                  <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-bold text-[#352A24]">
+                        ৳{item.servicePrice}
+                      </p>
+
+                      <p className="mt-1 text-[11px] text-[#927D70]">
+                        Payment:{" "}
+                        <span
+                          className={
+                            item.paymentStatus === "paid"
+                              ? "font-semibold text-green-600"
+                              : "text-[#927D70]"
+                          }
+                        >
+                          {item.paymentStatus === "paid" ? "Paid" : "Unpaid"}
+                        </span>
+                      </p>
+                    </div>
+
+                    {/* Payment and Cancel Buttons */}
+                    <div className="flex flex-wrap gap-2">
+                      {item.paymentStatus === "unpaid" &&
+                        ["pending", "confirmed"].includes(item.status) && (
+                          <motion.button
+                            whileHover={{ scale: 1.03 }}
+                            whileTap={{ scale: 0.95 }}
+                            disabled={processing === item._id}
+                            onClick={() => handleCancel(item._id)}
+                            className="flex shrink-0 cursor-pointer items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-100 disabled:opacity-50"
+                          >
+                            {processing === item._id ? (
+                              <Loader2 size={14} className="animate-spin" />
+                            ) : (
+                              <XCircle size={14} />
+                            )}
+                            Cancel
+                          </motion.button>
+                        )}
+
+                      {item.status !== "cancelled" &&
+                        (item.paymentStatus === "paid" ? (
+                          <span className="rounded-lg bg-green-50 px-4 py-2 text-xs font-semibold text-green-600">
+                            Paid
+                          </span>
+                        ) : (
+                          <motion.button
+                            whileHover={{ scale: 1.03 }}
+                            whileTap={{ scale: 0.95 }}
+                            disabled={processing === item._id}
+                            onClick={() => handlePayment(item._id)}
+                            className="flex shrink-0 cursor-pointer items-center gap-2 rounded-lg bg-[#8B5E3C] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#70482E] disabled:cursor-not-allowed disabled:opacity-50 sm:px-4"
+                          >
+                            {processing === item._id ? (
+                              <Loader2 size={14} className="animate-spin" />
+                            ) : (
+                              <CreditCard size={14} />
+                            )}
+                            {processing === item._id
+                              ? "Processing..."
+                              : "Pay Now"}
+                          </motion.button>
+                        ))}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            ))
+          ) : (
+            <motion.div
+              key="empty-state"
+              initial={{ opacity: 0, scale: 0.97 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25 }}
+              className="rounded-2xl border border-[#E9DED2] bg-white py-16 text-center"
+            >
+              <CalendarDays className="mx-auto text-[#A47754]" size={40} />
+
+              <h3 className="mt-4 text-xl font-bold text-[#38291F]">
+                {activeFilter === "all"
+                  ? "No Appointments Yet"
+                  : "No Matching Appointments"}
+              </h3>
+
+              <p className="mt-2 text-sm text-[#806F62]">
+                {activeFilter === "all"
+                  ? "Your salon booking history will appear here."
+                  : `No ${activeFilter} appointments found.`}
+              </p>
+
+              {activeFilter !== "all" && (
+                <motion.button
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.96 }}
+                  onClick={() => handleFilterChange("all")}
+                  className="mt-5 rounded-lg bg-[#80583D] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#62432E]"
+                >
+                  Clear Filter
+                </motion.button>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
-    </div>
+    </motion.div>
   );
 }
 

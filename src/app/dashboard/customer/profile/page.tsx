@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { authClient, useSession } from "@/lib/auth-client";
 import { toast } from "sonner";
-import { UserRound, Mail, Camera, Save, Loader2 } from "lucide-react";
+import { UserRound, Mail, Camera, Save, Loader2, Phone } from "lucide-react";
 import Image from "next/image";
 import { apiFetch } from "@/lib/api-fetch";
 
@@ -41,7 +41,7 @@ function CustomerProfileForm({
   const [name, setName] = useState(user.name || "");
   const [email] = useState(user.email || "");
   const [image, setImage] = useState(user.image || "");
-//   const [phone, setPhone] = useState("");
+  const [phone, setPhone] = useState("");
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -110,7 +110,7 @@ function CustomerProfileForm({
           customerId: user.id,
           name,
           image,
-        //   phone,
+          phone,
         }),
       });
 
@@ -206,12 +206,12 @@ function CustomerProfileForm({
                 type="email"
                 value={email}
                 readOnly
-                className="w-full rounded-xl border border-[#E9DED2] bg-gray-100 py-3 pl-11 pr-4 text-gray-500 outline-none"
+                className="w-full rounded-xl border border-[#E9DED2] bg-gray-100 py-3 pl-11 pr-4 text-gray-500 outline-none cursor-not-allowed"
               />
             </div>
           </div>
 
-          {/* <div>
+          <div>
             <label className="mb-2 block text-sm font-semibold text-[#38291F]">
               Phone Number
             </label>
@@ -222,13 +222,20 @@ function CustomerProfileForm({
               />
               <input
                 type="tel"
+                inputMode="numeric"
+                maxLength={11}
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="Enter phone number"
+                onChange={(e) => {
+                  const onlyNumbers = e.target.value
+                    .replace(/\D/g, "")
+                    .slice(0, 11);
+                  setPhone(onlyNumbers);
+                }}
+                placeholder="01XXXXXXXXX"
                 className="w-full rounded-xl border border-[#E9DED2] bg-[#FAF7F2] py-3 pl-11 pr-4 outline-none focus:border-[#80583D]"
               />
             </div>
-          </div> */}
+          </div>
 
           <button
             type="submit"
