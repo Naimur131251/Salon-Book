@@ -17,6 +17,14 @@ import {
 import Image from "next/image";
 import { apiFetch } from "@/lib/api-fetch";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface Appointment {
   _id: string;
@@ -48,6 +56,8 @@ function CustomerAppointmentsContent() {
   const statusFromUrl = searchParams.get("status");
 
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const [cancelTarget, setCancelTarget] = useState<Appointment | null>(null);
 
   const handleCopyTransaction = async (sessionId: string) => {
     try {
@@ -114,27 +124,27 @@ function CustomerAppointmentsContent() {
     void Promise.resolve().then(fetchAppointments);
   }, [customerId, isPending, fetchAppointments]);
 
-  const handleCancel = async (id: string) => {
-    if (!customerId) return;
-
-    if (!window.confirm("Are you sure you want to cancel this appointment?")) {
-      return;
-    }
+  const handleConfirmCancel = async () => {
+    if (!customerId || !cancelTarget) return;
 
     try {
-      setProcessing(id);
+      setProcessing(cancelTarget._id);
 
-      const res = await apiFetch(`/customer/appointments/${id}/cancel`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ customerId }),
-      });
+      const res = await apiFetch(
+        `/customer/appointments/${cancelTarget._id}/cancel`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ customerId }),
+        },
+      );
 
       const result = await res.json();
 
       if (!res.ok) throw new Error(result.message);
 
-      toast.success(result.message || "Appointment cancelled");
+      toast.success(result.message || "Appointment cancelled successfully!");
+      setCancelTarget(null);
       await fetchAppointments();
     } catch (error) {
       toast.error(
@@ -434,7 +444,7 @@ function CustomerAppointmentsContent() {
                             whileHover={{ scale: 1.03 }}
                             whileTap={{ scale: 0.95 }}
                             disabled={processing === item._id}
-                            onClick={() => handleCancel(item._id)}
+                            onClick={() => setCancelTarget(item)}
                             className="flex shrink-0 cursor-pointer items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-100 disabled:opacity-50"
                           >
                             {processing === item._id ? (
@@ -511,6 +521,59 @@ function CustomerAppointmentsContent() {
                     </div>
                   </div>
                 </div>
+                {/* Shadcn Cancel Confirmation Dialog */}
+                <Dialog
+                  open={!!cancelTarget}
+                  onOpenChange={(open) => {
+                    if (!open && !processing) setCancelTarget(null);
+                  }}
+                >
+                  <DialogContent className="border-[#E9DED2] bg-white sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle className="text-xl font-bold text-[#38291F]">
+                        Cancel Appointment
+                      </DialogTitle>
+                      <DialogDescription className="pt-2 text-sm text-[#806F62]">
+                        Are you sure you want to cancel your appointment for{" "}
+                        <span className="font-semibold text-[#38291F]">
+                          {cancelTarget?.service?.serviceName || "this service"}
+                        </span>{" "}
+                        on{" "}
+                        <span className="font-semibold text-[#38291F]">
+                          {cancelTarget?.appointmentDate
+                            ? new Date(
+                                cancelTarget.appointmentDate,
+                              ).toLocaleDateString()
+                            : ""}
+                        </span>
+                        ? This action cannot be undone.
+                      </DialogDescription>
+                    </DialogHeader>
+
+                    <DialogFooter className="mt-4 flex gap-2 sm:justify-end">
+                      <button
+                        type="button"
+                        disabled={!!processing}
+                        onClick={() => setCancelTarget(null)}
+                        className="cursor-pointer rounded-xl border border-[#E9DED2] bg-white px-4 py-2.5 text-sm font-semibold text-[#806F62] transition hover:bg-[#FAF7F2] disabled:opacity-50"
+                      >
+                        Keep Appointment
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={!!processing}
+                        onClick={handleConfirmCancel}
+                        className="flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-red-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
+                      >
+                        {processing && (
+                          <Loader2 size={15} className="animate-spin" />
+                        )}
+                        Yes, Cancel
+                      </button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
               </motion.div>
             ))
           ) : (
