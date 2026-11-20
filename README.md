@@ -31,6 +31,7 @@
 - [Key Features](#-key-features)
 - [Technology Stack](#-technology-stack)
 - [Project Architecture](#-project-architecture)
+- [How SalonBook Works](#-how-salonBook-works)
 - [Installation & Setup](#-installation--setup)
 - [Environment Variables](#-environment-variables)
 - [Running Locally](#-running-locally)
@@ -305,6 +306,43 @@ salon-book/
 - Better Auth handles user authentication and JWT sessions.
 - Stripe handles secure payment processing.
 - ImgBB provides image hosting.
+
+---
+
+## 🔄 How SalonBook Works
+
+### Appointment Booking Workflow
+
+```mermaid
+flowchart TD
+    A["Browse Services"] --> B["Select a Service"]
+    B --> C["Choose Appointment Date"]
+    C --> D["Check Available Slots"]
+    D --> E["Select Time Slot"]
+    E --> F["Submit Booking"]
+    F --> G["Appointment Created"]
+    G --> H["Admin Reviews Request"]
+    H --> I{"Admin Decision"}
+    I -->|Confirm| J["Customer Can Pay"]
+    I -->|Cancel| K["Appointment Cancelled"]
+    J --> L["Stripe Checkout"]
+    L --> M["Payment Verification"]
+    M --> N["Payment Completed"]
+```
+
+### Authentication Workflow
+
+```mermaid
+flowchart TD
+    A["User Visits Website"] --> B["Login / Register"]
+    B --> C["Better Auth"]
+    C --> D{"Authentication"}
+    D -->|Failed| E["Show Error"]
+    D -->|Successful| F["Check User Role"]
+    F -->|Customer| G["Customer Dashboard"]
+    F -->|Admin| H["Admin Dashboard"]
+    F -->|Blocked| I["Blocked Page"]
+```
 
 ---
 
