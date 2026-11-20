@@ -330,7 +330,7 @@ export default function ManageUsersPage() {
                       {/* Status */}
                       <td className="px-5 py-4">
                         <span
-                          className={`whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold ${
+                          className={`whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold cursor-pointer ${
                             user.isBlocked
                               ? "bg-red-50 text-red-600"
                               : "bg-green-50 text-green-700"
@@ -352,7 +352,7 @@ export default function ManageUsersPage() {
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => setSelected(user)}
-                            className="rounded-lg bg-[#EDE0D3] p-2 text-[#80583D] transition hover:bg-[#E3D1BD]"
+                            className="rounded-lg bg-[#EDE0D3] p-2 text-[#80583D] transition hover:bg-[#E3D1BD] cursor-pointer"
                             title="View Details"
                           >
                             <Eye size={17} />
@@ -361,7 +361,7 @@ export default function ManageUsersPage() {
                           <button
                             disabled={updating === user._id}
                             onClick={() => setUserToUpdate(user)}
-                            className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all disabled:cursor-not-allowed disabled:opacity-50 ${
+                            className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer ${
                               user.isBlocked
                                 ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white"
                                 : "border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white"
@@ -428,7 +428,7 @@ export default function ManageUsersPage() {
 
             <button
               onClick={() => setSelected(null)}
-              className="mt-6 w-full rounded-xl bg-[#80583D] py-3 font-semibold text-white"
+              className="mt-6 w-full rounded-xl bg-[#80583D] py-3 font-semibold text-white cursor-pointer"
             >
               Close
             </button>
@@ -467,7 +467,7 @@ export default function ManageUsersPage() {
 
             <AlertDialogDescription className="text-sm leading-relaxed text-[#806F62]">
               Are you sure you want to{" "}
-              <span className="font-semibold text-[#38291F]">
+              <span className="font-semibold text-[#38291F] cursor-pointer">
                 {userToUpdate?.isBlocked ? "unblock" : "block"}{" "}
                 {userToUpdate?.name}
               </span>
@@ -481,7 +481,7 @@ export default function ManageUsersPage() {
           <AlertDialogFooter className="mt-4 flex-row justify-end gap-2">
             <AlertDialogCancel
               disabled={!!updating}
-              className="mt-0 border-[#E9DED2] text-[#806F62]"
+              className="mt-0 border-[#E9DED2] text-[#806F62] cursor-pointer"
             >
               Cancel
             </AlertDialogCancel>
@@ -496,7 +496,7 @@ export default function ManageUsersPage() {
                 userToUpdate?.isBlocked
                   ? "bg-green-600 hover:bg-green-700"
                   : "bg-red-600 hover:bg-red-700"
-              } text-white`}
+              } text-white cursor-pointer`}
             >
               {updating ? (
                 <Loader2 size={16} className="mr-2 animate-spin" />
