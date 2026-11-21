@@ -78,20 +78,24 @@ function CustomerProfileForm({
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+
     if (!file) return;
 
     if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
       toast.error("Only JPG, PNG and WEBP images are allowed");
+      e.target.value = "";
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
       toast.error("Image size must be below 5MB");
+      e.target.value = "";
       return;
     }
 
     if (!IMGBB_KEY) {
-      toast.error("Image upload configuration is missing");
+      toast.error("ImgBB API key is missing");
+      e.target.value = "";
       return;
     }
 
@@ -99,9 +103,11 @@ function CustomerProfileForm({
       setUploading(true);
 
       const formData = new FormData();
+
+      formData.append("key", IMGBB_KEY);
       formData.append("image", file);
 
-      const res = await fetch(`https://imgbb.com{IMGBB_KEY}`, {
+      const res = await fetch("https://api.imgbb.com/1/upload", {
         method: "POST",
         body: formData,
       });
@@ -109,13 +115,20 @@ function CustomerProfileForm({
       const result = await res.json();
 
       if (!res.ok || !result.success) {
-        throw new Error("Image upload failed");
+        throw new Error(result.error?.message || "Image upload failed");
       }
 
-      setImage(result.data.url);
+      const imageUrl = result.data.url;
+
+      setImage(imageUrl);
+
       toast.success("Image uploaded successfully");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Upload failed");
+      console.error("ImgBB upload error:", error);
+
+      toast.error(
+        error instanceof Error ? error.message : "Image upload failed",
+      );
     } finally {
       setUploading(false);
       e.target.value = "";
