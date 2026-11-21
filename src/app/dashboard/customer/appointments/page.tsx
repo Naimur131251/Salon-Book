@@ -414,7 +414,6 @@ function CustomerAppointmentsContent() {
                   </div>
 
                   {/* Price and Payment */}
-                  {/* Price and Payment */}
                   <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
                     <div>
                       <p className="text-sm font-bold text-[#352A24]">
@@ -457,67 +456,87 @@ function CustomerAppointmentsContent() {
                         )}
 
                       {/* Paid হলে Transaction ID ও Copy বাটন দেখাবে */}
-                      {item.paymentStatus === "paid" &&
-                        item.stripeSessionId && (
-                          <div className="inline-flex items-center gap-1.5 rounded-lg bg-[#FAF7F2] px-2.5 py-1.5 text-[11px] text-[#806F62]">
-                            <span className="font-medium text-[#A47754]">
-                              Txn ID:
-                            </span>
-                            <span
-                              title={item.stripeSessionId}
-                              className="font-mono font-semibold text-[#38291F]"
-                            >
-                              {item.stripeSessionId.length > 18
-                                ? `${item.stripeSessionId.slice(0, 10)}...${item.stripeSessionId.slice(-6)}`
-                                : item.stripeSessionId}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleCopyTransaction(item.stripeSessionId!)
-                              }
-                              title="Copy Transaction ID"
-                              className="ml-0.5 inline-flex cursor-pointer items-center gap-1 rounded bg-white px-1.5 py-0.5 text-[10px] font-semibold text-[#80583D] shadow-2xs transition hover:bg-[#F3ECE3] active:scale-95"
-                            >
-                              {copiedId === item.stripeSessionId ? (
-                                <>
-                                  <Check size={11} className="text-green-600" />
-                                  <span className="text-green-600">Copied</span>
-                                </>
-                              ) : (
-                                <>
-                                  <Copy size={11} />
-                                  <span>Copy</span>
-                                </>
-                              )}
-                            </button>
-                          </div>
-                        )}
+                      <div className="flex flex-wrap items-center gap-2">
+                        {item.paymentStatus === "paid" &&
+                          item.stripeSessionId && (
+                            <div className="inline-flex items-center gap-1.5 rounded-lg bg-[#FAF7F2] px-2.5 py-1.5 text-[11px] text-[#806F62]">
+                              <span className="font-medium text-[#A47754]">
+                                Txn ID:
+                              </span>
 
-                      {/* ২. শুধুমাত্র Confirmed অবস্থায় Cancel-এর বদলে Pay Now (বা Paid ব্যাজ) দেখাবে */}
-                      {item.status === "confirmed" &&
-                        (item.paymentStatus === "paid" ? (
-                          <span className="rounded-lg bg-green-50 px-4 py-2 text-xs font-semibold text-green-600">
-                            Paid
-                          </span>
-                        ) : (
-                          <motion.button
-                            whileHover={{ scale: 1.03 }}
-                            whileTap={{ scale: 0.95 }}
-                            disabled={processing === item._id}
-                            onClick={() => handlePayment(item._id)}
-                            className="flex shrink-0 cursor-pointer items-center gap-2 rounded-lg bg-[#8B5E3C] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#70482E] disabled:cursor-not-allowed disabled:opacity-50 sm:px-4"
-                          >
-                            {processing === item._id ? (
-                              <Loader2 size={14} className="animate-spin" />
-                            ) : (
-                              <CreditCard size={14} />
-                            )}
-                            {processing === item._id
-                              ? "Processing..."
-                              : "Pay Now"}
-                          </motion.button>
-                        ))}
+                              {/* ফোনের জন্য (শুধু cs_test...) */}
+                              <span
+                                title={item.stripeSessionId}
+                                className="font-mono font-semibold text-[#38291F] sm:hidden"
+                              >
+                                {item.stripeSessionId.length > 7
+                                  ? `${item.stripeSessionId.slice(0, 7)}...`
+                                  : item.stripeSessionId}
+                              </span>
+
+                              {/* পিসির জন্য (আগের মতোই থাকবে) */}
+                              <span
+                                title={item.stripeSessionId}
+                                className="hidden font-mono font-semibold text-[#38291F] sm:inline"
+                              >
+                                {item.stripeSessionId.length > 18
+                                  ? `${item.stripeSessionId.slice(0, 10)}...${item.stripeSessionId.slice(-6)}`
+                                  : item.stripeSessionId}
+                              </span>
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleCopyTransaction(item.stripeSessionId!)
+                                }
+                                title="Copy Transaction ID"
+                                className="ml-0.5 inline-flex cursor-pointer items-center gap-1 rounded bg-white px-1.5 py-0.5 text-[10px] font-semibold text-[#80583D] shadow-2xs transition hover:bg-[#F3ECE3] active:scale-95"
+                              >
+                                {copiedId === item.stripeSessionId ? (
+                                  <>
+                                    <Check
+                                      size={11}
+                                      className="text-green-600"
+                                    />
+                                    <span className="text-green-600">
+                                      Copied
+                                    </span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Copy size={11} />
+                                    <span>Copy</span>
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                          )}
+
+                        {/* ২. শুধুমাত্র Confirmed অবস্থায় Cancel-এর বদলে Pay Now (বা Paid ব্যাজ) দেখাবে */}
+                        {item.status === "confirmed" &&
+                          (item.paymentStatus === "paid" ? (
+                            <span className="rounded-lg bg-green-50 px-4 py-2 text-xs font-semibold text-green-600">
+                              Paid
+                            </span>
+                          ) : (
+                            <motion.button
+                              whileHover={{ scale: 1.03 }}
+                              whileTap={{ scale: 0.95 }}
+                              disabled={processing === item._id}
+                              onClick={() => handlePayment(item._id)}
+                              className="flex shrink-0 cursor-pointer items-center gap-2 rounded-lg bg-[#8B5E3C] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#70482E] disabled:cursor-not-allowed disabled:opacity-50 sm:px-4"
+                            >
+                              {processing === item._id ? (
+                                <Loader2 size={14} className="animate-spin" />
+                              ) : (
+                                <CreditCard size={14} />
+                              )}
+                              {processing === item._id
+                                ? "Processing..."
+                                : "Pay Now"}
+                            </motion.button>
+                          ))}
+                      </div>
                     </div>
                   </div>
                 </div>

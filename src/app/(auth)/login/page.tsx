@@ -102,7 +102,8 @@ function LoginForm() {
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{
-              backgroundImage: "url('https://unsplash.com')",
+              backgroundImage:
+                "url('https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=1200')",
             }}
           />
 
@@ -110,7 +111,7 @@ function LoginForm() {
 
           <Link
             href="/"
-            className="absolute left-10 top-10 flex items-center gap-2 text-2xl font-bold text-white"
+            className="absolute left-10 top-10 flex items-center gap-2 text-2xl font-bold text-white bg-[#919191] hover:bg-[#927878] rounded-xl px-3 py-1 backdrop:blur-2xl"
           >
             <Scissors size={28} className="text-[#D9B98B]" />
             Salon<span className="text-[#D9B98B]">Book</span>

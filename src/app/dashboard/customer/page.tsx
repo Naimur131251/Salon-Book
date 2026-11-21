@@ -12,11 +12,8 @@ import {
   ArrowRight,
   Loader2,
 } from "lucide-react";
-// import { getToken } from "@/lib/get-token";
 import { apiFetch } from "@/lib/api-fetch";
-import { motion } from "framer-motion";
-
-// const API = process.env.NEXT_PUBLIC_SERVER_BASE_URL;
+import { motion } from "framer-motion"; // অথবা আপনার প্রজেক্ট অনুযায়ী "motion/react"
 
 interface RecentAppointment {
   _id: string;
@@ -90,15 +87,10 @@ export default function CustomerDashboard() {
         const result = await res.json();
 
         if (!res.ok) {
-          throw new Error(result.message);
+          throw new Error(result.message || "Failed to fetch overview");
         }
 
-        setOverview(result.data);
-
-        if (!res.ok) {
-          throw new Error(result.message);
-        }
-
+        // ডুপ্লিকেট লাইনগুলো বাদ দেওয়া হয়েছে
         setOverview(result.data);
       } catch (error) {
         console.error("Customer overview error:", error);
@@ -110,7 +102,7 @@ export default function CustomerDashboard() {
     fetchOverview();
   }, [session, isPending]);
 
-  if (isPending || (loading && session?.user)) {
+  if (isPending || (session?.user && loading)) {
     return (
       <div className="flex min-h-80 items-center justify-center">
         <Loader2 className="animate-spin text-[#80583D]" size={32} />
@@ -119,10 +111,13 @@ export default function CustomerDashboard() {
   }
 
   if (!session?.user) {
-    return <p className="p-8">Please sign in to view your dashboard.</p>;
+    return (
+      <p className="p-8 text-[#806F62]">
+        Please sign in to view your dashboard.
+      </p>
+    );
   }
 
-  // অ্যানিমেশন ভেরিয়েন্টস
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -145,7 +140,22 @@ export default function CustomerDashboard() {
     },
   };
 
-  // আপনার কম্পোনেন্টের ভেতরের return অংশ:
+  const getStatusBadgeStyle = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case "confirmed":
+        return "bg-[#E6F4EA] text-[#1E6E3D] border border-[#CEEAD6]";
+      case "pending":
+        return "bg-[#FEF7E0] text-[#9A6700] border border-[#FDE293]";
+      case "cancelled":
+        return "bg-[#FCE8E6] text-[#B3261E] border border-[#F6AEA9]";
+      case "completed":
+      case "paid":
+        return "bg-[#EDE0D3] text-[#5C3D28] border border-[#DEC8B4]";
+      default:
+        return "bg-[#F3ECE4] text-[#80583D] border border-[#E5D7C8]";
+    }
+  };
+
   return (
     <motion.div
       variants={containerVariants}
@@ -236,7 +246,6 @@ export default function CustomerDashboard() {
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.3, delay: index * 0.08 }}
-                whileHover={{ scale: 1.01 }}
                 className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-[#FAF7F2] p-4"
               >
                 <div>
@@ -248,7 +257,11 @@ export default function CustomerDashboard() {
                   </p>
                 </div>
 
-                <span className="rounded-full bg-[#EDE0D3] px-3 py-1 text-xs font-semibold capitalize text-[#80583D]">
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${getStatusBadgeStyle(
+                    appointment.status,
+                  )}`}
+                >
                   {appointment.status}
                 </span>
               </motion.div>

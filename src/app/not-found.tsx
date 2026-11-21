@@ -26,7 +26,7 @@ export default function NotFound() {
 
   return (
     <main
-      className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#17130F] px-5 py-16 text-[#F5E9D8]"
+      className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#FBF7F2] px-5 py-16 text-[#2F2118]"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
@@ -42,12 +42,12 @@ export default function NotFound() {
                 }
           }
           transition={{ duration: 0.8 }}
-          className="absolute left-1/2 top-1/2 h-125 w-125 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#A77945] blur-[130px]"
+          className="absolute left-1/2 top-1/2 h-125 w-125 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#B78B61] blur-[130px]"
         />
 
-        <div className="absolute -left-40 -top-40 h-96 w-96 rounded-full bg-[#D7B98D]/5 blur-[100px]" />
+        <div className="absolute -left-40 -top-40 h-96 w-96 rounded-full bg-[#DCC3A8]/20 blur-[100px]" />
 
-        <div className="absolute -bottom-40 -right-40 h-96 w-96 rounded-full bg-[#D7B98D]/5 blur-[100px]" />
+        <div className="absolute -bottom-40 -right-40 h-96 w-96 rounded-full bg-[#DCC3A8]/20 blur-[100px]" />
       </div>
 
       {/* Floating particles */}
@@ -55,7 +55,7 @@ export default function NotFound() {
         particles.map((particle, index) => (
           <motion.div
             key={index}
-            className="pointer-events-none absolute z-0 h-1.5 w-1.5 rounded-full bg-[#E0BE8E]"
+            className="pointer-events-none absolute z-0 h-1.5 w-1.5 rounded-full bg-[#80583D]"
             style={{
               left: particle.left,
               top: particle.top,
@@ -77,7 +77,7 @@ export default function NotFound() {
 
       {/* Rotating outer circle */}
       <motion.div
-        className="pointer-events-none absolute left-1/2 top-1/2 h-162.5 w-162.5 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#D7B98D]/10"
+        className="pointer-events-none absolute left-1/2 top-1/2 h-162.5 w-162.5 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#DCC3A8]"
         animate={reduceMotion ? {} : { rotate: 360 }}
         transition={{
           duration: 60,
@@ -85,12 +85,12 @@ export default function NotFound() {
           ease: "linear",
         }}
       >
-        <div className="absolute left-1/2 top-0 h-2 w-2 rounded-full bg-[#E0BE8E]/50" />
+        <div className="absolute left-1/2 top-0 h-2 w-2 rounded-full bg-[#80583D]" />
       </motion.div>
 
       {/* Inner circle */}
       <motion.div
-        className="pointer-events-none absolute left-1/2 top-1/2 h-120 w-120 -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-[#D7B98D]/10"
+        className="pointer-events-none absolute left-1/2 top-1/2 h-120 w-120 -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-[#b4a18c]"
         animate={reduceMotion ? {} : { rotate: -360 }}
         transition={{
           duration: 80,
@@ -114,11 +114,11 @@ export default function NotFound() {
           initial={reduceMotion ? false : { opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.7 }}
-          className="mb-10 inline-flex items-center gap-2 rounded-full border border-[#D7B98D]/20 bg-[#D7B98D]/10 px-5 py-2.5"
+          className="mb-10 inline-flex items-center gap-2 rounded-full border border-[#DCC3A8]/60 bg-[#F5EAE0] px-5 py-2.5"
         >
-          <Sparkles size={14} className="text-[#E0BE8E]" />
+          <Sparkles size={14} className="text-[#80583D]" />
 
-          <span className="text-[10px] font-semibold uppercase tracking-[0.25em] text-[#D7B98D]">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.25em] text-[#80583D]">
             SalonBook · Page Not Found
           </span>
         </motion.div>
@@ -141,11 +141,11 @@ export default function NotFound() {
             damping: 12,
             delay: 0.3,
           }}
-          className="group relative mb-10 flex h-36 w-36 items-center justify-center rounded-full bg-[#3B2E22] shadow-[0_0_80px_rgba(224,190,142,0.15)] ring-1 ring-[#D7B98D]/30"
+          className="group relative mb-10 flex h-36 w-36 items-center justify-center rounded-full bg-[#F5EAE0]/50 shadow-[0_0_80px_rgba(128,88,61,0.12)] ring-1 ring-[#DCC3A8]/70"
         >
           {/* Pulsing ring */}
           <motion.div
-            className="absolute -inset-3 rounded-full border border-[#E0BE8E]/30"
+            className="absolute -inset-3 rounded-full border border-[#80583D]/50"
             animate={
               reduceMotion
                 ? {}
@@ -167,7 +167,7 @@ export default function NotFound() {
             className="relative h-24 w-24 overflow-visible"
             fill="none"
           >
-            {/* Upper Handle + Blade (Pivots cleanly at 50, 50) */}
+            {/* Upper Handle + Blade */}
             <motion.g
               animate={
                 reduceMotion
@@ -188,7 +188,7 @@ export default function NotFound() {
                 cx="32"
                 cy="32"
                 r="9"
-                stroke="#E0BE8E"
+                stroke="#80583D"
                 strokeWidth="6.5"
               />
               <line
@@ -196,13 +196,13 @@ export default function NotFound() {
                 y1="38.5"
                 x2="74"
                 y2="74"
-                stroke="#E0BE8E"
+                stroke="#80583D"
                 strokeWidth="6.5"
                 strokeLinecap="round"
               />
             </motion.g>
 
-            {/* Lower Handle + Blade (Pivots cleanly at 50, 50) */}
+            {/* Lower Handle + Blade */}
             <motion.g
               animate={
                 reduceMotion ? {} : { rotate: cut ? [14, -16, 14] : [0, 10, 0] }
@@ -221,7 +221,7 @@ export default function NotFound() {
                 cx="32"
                 cy="68"
                 r="9"
-                stroke="#E0BE8E"
+                stroke="#80583D"
                 strokeWidth="6.5"
               />
               <line
@@ -229,14 +229,14 @@ export default function NotFound() {
                 y1="61.5"
                 x2="74"
                 y2="26"
-                stroke="#E0BE8E"
+                stroke="#80583D"
                 strokeWidth="6.5"
                 strokeLinecap="round"
               />
             </motion.g>
 
             {/* Center Pivot Screw */}
-            <circle cx="50" cy="50" r="3.5" fill="#E0BE8E" />
+            <circle cx="50" cy="50" r="3.5" fill="#80583D" />
           </svg>
 
           {/* Sparkle */}
@@ -255,7 +255,7 @@ export default function NotFound() {
               repeat: Infinity,
             }}
           >
-            <Sparkles size={25} className="fill-[#E0BE8E] text-[#E0BE8E]" />
+            <Sparkles size={25} className="fill-[#B78B61] text-[#B78B61]" />
           </motion.div>
         </motion.button>
 
@@ -288,9 +288,9 @@ export default function NotFound() {
                 type: "spring",
                 stiffness: 100,
               }}
-              className="select-none font-serif text-[clamp(105px,23vw,175px)] font-bold leading-none tracking-[-0.08em] text-[#E0BE8E]"
+              className="select-none font-serif text-[clamp(105px,23vw,175px)] font-bold leading-none tracking-[-0.08em] text-[#80583D]"
               style={{
-                textShadow: "0 10px 60px rgba(224,190,142,0.15)",
+                textShadow: "0 10px 60px rgba(128,88,61,0.15)",
               }}
             >
               {digit}
@@ -303,7 +303,7 @@ export default function NotFound() {
           initial={reduceMotion ? false : { opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.8, duration: 0.7 }}
-          className="mb-4 text-2xl font-semibold tracking-tight text-[#F5E9D8] sm:text-3xl"
+          className="mb-4 text-2xl font-semibold tracking-tight text-[#2F2118] sm:text-3xl"
         >
           Oops! This page needs a trim.
         </motion.h1>
@@ -313,7 +313,7 @@ export default function NotFound() {
           initial={reduceMotion ? false : { opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.95, duration: 0.7 }}
-          className="mb-10 max-w-md text-sm leading-7 text-[#B9A995] sm:text-base"
+          className="mb-10 max-w-md text-sm leading-7 text-[#8A7563] sm:text-base"
         >
           Looks like this page has gone missing! It may have been moved, or the
           link might be broken. Let&apos;s get you back to your perfect salon
@@ -333,11 +333,12 @@ export default function NotFound() {
             onClick={() => router.back()}
             whileHover={reduceMotion ? {} : { y: -5, scale: 1.03 }}
             whileTap={reduceMotion ? {} : { scale: 0.95 }}
-            className="flex items-center justify-center gap-2 rounded-xl border border-[#D7B98D]/30 bg-white/3 px-7 py-4 text-sm font-medium text-[#E0BE8E] backdrop-blur-md transition-colors hover:border-[#D7B98D]/60 hover:bg-[#D7B98D]/10"
+            className="flex items-center justify-center gap-2 rounded-xl border border-[#DCC3A8]/70 bg-white/60 px-7 py-4 text-sm font-medium text-[#80583D] backdrop-blur-md transition-colors hover:border-[#B78B61] hover:bg-[#F5EAE0]"
           >
             <ArrowLeft size={17} />
             Go Back
           </motion.button>
+
           {/* Home button */}
           <motion.div
             whileHover={reduceMotion ? {} : { y: -5, scale: 1.03 }}
@@ -345,7 +346,7 @@ export default function NotFound() {
           >
             <Link
               href="/"
-              className="group flex items-center justify-center gap-2 rounded-xl bg-[#D7B98D] px-7 py-4 text-sm font-semibold text-[#251B12] shadow-lg shadow-[#D7B98D]/10 transition-colors hover:bg-[#E9CCA1]"
+              className="group flex items-center justify-center gap-2 rounded-xl bg-[#80583D] px-7 py-4 text-sm font-semibold text-white shadow-lg shadow-[#80583D]/10 transition-colors hover:bg-[#6E4932]"
             >
               <Home size={17} />
               Back to Home
@@ -362,7 +363,7 @@ export default function NotFound() {
           initial={reduceMotion ? false : { opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1.5, duration: 1 }}
-          className="mt-16 flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.3em] text-[#806D57]"
+          className="mt-16 flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.3em] text-[#9A806A]"
         >
           <Scissors size={13} />
           Style your moments with SalonBook

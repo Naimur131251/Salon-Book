@@ -1,13 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { authClient, useSession } from "@/lib/auth-client";
 import { toast } from "sonner";
 import { UserRound, Mail, Camera, Save, Loader2, Phone } from "lucide-react";
 import Image from "next/image";
 import { apiFetch } from "@/lib/api-fetch";
 
-// const API = process.env.NEXT_PUBLIC_SERVER_BASE_URL;
 const IMGBB_KEY = process.env.NEXT_PUBLIC_IMGBB_API_KEY;
 
 export default function CustomerProfilePage() {
@@ -22,7 +21,7 @@ export default function CustomerProfilePage() {
   }
 
   if (!session?.user) {
-    return <p className="p-8">Please sign in first.</p>;
+    return <p className="p-8 text-[#806F62]">Please sign in first.</p>;
   }
 
   return <CustomerProfileForm key={session.user.id} user={session.user} />;
@@ -40,15 +39,45 @@ function CustomerProfileForm({
   };
 }) {
   const [name, setName] = useState(user.name || "");
-  const [email] = useState(user.email || "");
+  const [email, setEmail] = useState(user.email || "");
   const [image, setImage] = useState(user.image || "");
   const [phone, setPhone] = useState(user.phone || "");
+  const [loadingProfile, setLoadingProfile] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  // ব্যাকএন্ডের GET /customer/profile থেকে ডাটাবেসের সর্বশেষ ডাটা (phone সহ) নিয়ে আসবে
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchProfile = async () => {
+      try {
+        setLoadingProfile(true);
+        const res = await apiFetch("/customer/profile");
+        const result = await res.json();
+
+        if (isMounted && res.ok && result.success && result.data) {
+          setName(result.data.name || user.name || "");
+          setEmail(result.data.email || user.email || "");
+          setImage(result.data.image || user.image || "");
+          setPhone(result.data.phone || "");
+        }
+      } catch (error) {
+        console.error("Failed to fetch profile:", error);
+      } finally {
+        if (isMounted) setLoadingProfile(false);
+      }
+    };
+
+    fetchProfile();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user]);
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-
     if (!file) return;
 
     if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
@@ -72,13 +101,10 @@ function CustomerProfileForm({
       const formData = new FormData();
       formData.append("image", file);
 
-      const res = await fetch(
-        `https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`,
-        {
-          method: "POST",
-          body: formData,
-        },
-      );
+      const res = await fetch(`https://imgbb.com{IMGBB_KEY}`, {
+        method: "POST",
+        body: formData,
+      });
 
       const result = await res.json();
 
@@ -109,7 +135,7 @@ function CustomerProfileForm({
         },
         body: JSON.stringify({
           customerId: user.id,
-          name,
+          name: name.trim(),
           image,
           phone,
         }),
@@ -118,6 +144,13 @@ function CustomerProfileForm({
       const result = await res.json();
 
       if (!res.ok) throw new Error(result.message);
+
+      if (result.data) {
+        setName(result.data.name || name.trim());
+        setImage(result.data.image || image);
+        setPhone(result.data.phone || phone);
+      }
+
       await authClient.updateUser({
         name: name.trim(),
         image,
@@ -132,6 +165,14 @@ function CustomerProfileForm({
       setSaving(false);
     }
   };
+
+  if (loadingProfile) {
+    return (
+      <div className="flex min-h-80 items-center justify-center">
+        <Loader2 className="animate-spin text-[#80583D]" size={32} />
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-3xl space-y-7">
@@ -154,7 +195,7 @@ function CustomerProfileForm({
               height={500}
             />
 
-            <label className="absolute bottom-0 right-0 cursor-pointer rounded-full bg-[#80583D] p-2.5 text-white">
+            <label className="absolute bottom-0 right-0 cursor-pointer rounded-full bg-[#80583D] p-2.5 text-white transition hover:bg-[#62432E]">
               {uploading ? (
                 <Loader2 size={18} className="animate-spin" />
               ) : (
@@ -207,7 +248,7 @@ function CustomerProfileForm({
                 type="email"
                 value={email}
                 readOnly
-                className="w-full rounded-xl border border-[#E9DED2] bg-gray-100 py-3 pl-11 pr-4 text-gray-500 outline-none cursor-not-allowed"
+                className="w-full cursor-not-allowed rounded-xl border border-[#E9DED2] bg-gray-100 py-3 pl-11 pr-4 text-gray-500 outline-none"
               />
             </div>
           </div>
@@ -241,7 +282,7 @@ function CustomerProfileForm({
           <button
             type="submit"
             disabled={saving || uploading}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#80583D] py-3.5 font-semibold text-white transition hover:bg-[#62432E] disabled:opacity-50 cursor-pointer"
+            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#80583D] py-3.5 font-semibold text-white transition hover:bg-[#62432E] disabled:opacity-50"
           >
             {saving ? (
               <Loader2 size={19} className="animate-spin" />
